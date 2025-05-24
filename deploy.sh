@@ -5,7 +5,7 @@ export GOOGLE_CLOUD_PROJECT="local-dev-226505"
 export GOOGLE_CLOUD_LOCATION="asia-northeast1" # Example location
 
 # Set the path to your agent code directory
-export AGENT_PATH="./multi_tool_agent" # Assuming capital_agent is in the current directory
+export AGENT_PATH="./learning_agent" # Assuming capital_agent is in the current directory
 
 # Set a name for your Cloud Run service (optional)
 export SERVICE_NAME="prototype"
