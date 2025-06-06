@@ -1,4 +1,4 @@
-from google.adk.models.lite_llm import LiteLlm
+# from google.adk.models.lite_llm import LiteLlm
 
 def get_model():
     # localのollamaを使用する場合
