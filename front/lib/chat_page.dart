@@ -27,20 +27,22 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   Stream<String> generateStream(String prompt,
       {Iterable<Attachment> attachments = const []}) async* {
     try {
+      final body = {
+        "app_name": "learning_agent",
+        "user_id": userId,
+        "session_id": sessionId,
+        "new_message": {
+          "role": "user",
+          "parts": [
+            {"text": prompt}
+          ]
+        },
+        "streaming": false
+      };
+      print(jsonEncode(body));
       final res = await http.post(Uri.parse(backendUrl),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            "appName": "learning_agent",
-            "userId": userId,
-            "sessionId": sessionId,
-            "newMessage": {
-              "role": "user",
-              "parts": [
-                {"text": prompt}
-              ]
-            },
-            "streaming": false
-          }));
+          body: jsonEncode(body));
 
       if (res.statusCode == 200) {
         final decodedBody = jsonDecode(res.body) as List;
@@ -73,20 +75,22 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      final body = {
+        "app_name": "learning_agent",
+        "user_id": userId,
+        "session_id": sessionId,
+        "new_message": {
+          "role": "user",
+          "parts": [
+            {"text": prompt}
+          ]
+        },
+        "streaming": false
+      };
+      print(jsonEncode(body));
       final res = await http.post(Uri.parse(backendUrl),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            "appName": "multi_tool_agent",
-            "userId": userId,
-            "sessionId": sessionId,
-            "newMessage": {
-              "role": "user",
-              "parts": [
-                {"text": prompt}
-              ]
-            },
-            "streaming": false
-          }));
+          body: jsonEncode(body));
 
       if (res.statusCode == 200) {
         final decodedBody = jsonDecode(res.body) as List;
