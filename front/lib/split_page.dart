@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:front/main.dart';
+import 'chat_page.dart';
 
 class SplitPage extends StatefulWidget {
   const SplitPage({super.key, required this.userId, required this.sessionId});
