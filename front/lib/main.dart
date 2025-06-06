@@ -4,6 +4,7 @@ import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'split_page.dart';
 
 const _backendHost =
     String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
@@ -70,7 +71,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         title: 'ADK Chat',
         theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
-        home: ChatPage(userId: userId, sessionId: sessionId),
+        home: SplitPage(userId: userId, sessionId: sessionId),
       );
 }
 
@@ -198,7 +199,6 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('ADK Chat Demo')),
         body: LlmChatView(
           provider: CustomBackendProvider(
               userId: widget.userId, sessionId: widget.sessionId),
