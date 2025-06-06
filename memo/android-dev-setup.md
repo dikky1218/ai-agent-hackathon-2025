@@ -131,6 +131,8 @@ flutter devices
 
 # アプリ実行（ホットリロード対応）
 flutter run
+# 環境変数を指定する方法
+flutter run --dart-define=BACKEND_HOST=localhost:8000
 
 # アプリのビルド（APK作成）
 flutter build apk
