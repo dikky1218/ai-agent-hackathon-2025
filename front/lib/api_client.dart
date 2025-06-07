@@ -7,6 +7,35 @@ const _backendHost =
 
 const host = 'http://$_backendHost';
 
+class Session {
+  final String appName;
+  final List<dynamic> events;
+  final String id;
+  final double lastUpdateTime;
+  final Map<String, dynamic> state;
+  final String userId;
+
+  Session({
+    required this.appName,
+    required this.events,
+    required this.id,
+    required this.lastUpdateTime,
+    required this.state,
+    required this.userId,
+  });
+
+  factory Session.fromJson(Map<String, dynamic> json) {
+    return Session(
+      appName: json['appName'] as String,
+      events: json['events'] as List<dynamic>,
+      id: json['id'] as String,
+      lastUpdateTime: (json['lastUpdateTime'] as num).toDouble(),
+      state: json['state'] as Map<String, dynamic>,
+      userId: json['userId'] as String,
+    );
+  }
+}
+
 class ApiClient {
   Future<String> postMessage({
     required String userId,
@@ -48,6 +77,22 @@ class ApiClient {
       throw Exception('Invalid response format');
     } else {
       throw Exception('Backend error ${res.statusCode}');
+    }
+  }
+
+  Future<List<Session>> getSessions(String userId) async {
+    final res = await http.get(
+      Uri.parse('$host/apps/learning_agent/users/$userId/sessions'),
+    );
+
+    if (res.statusCode == 200) {
+      final decodedBody = jsonDecode(res.body) as List;
+      return decodedBody
+          .map((sessionJson) =>
+              Session.fromJson(sessionJson as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to get sessions: ${res.statusCode}');
     }
   }
 }
