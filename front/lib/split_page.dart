@@ -10,13 +10,30 @@ class SplitPage extends StatefulWidget {
   State<SplitPage> createState() => _SplitPageState();
 }
 
-class _SplitPageState extends State<SplitPage> {
+class _SplitPageState extends State<SplitPage>
+    with SingleTickerProviderStateMixin {
   String? _selectedSessionId;
+  TabController? _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
 
   void _onSessionSelected(String sessionId) {
     setState(() {
       _selectedSessionId = sessionId;
     });
+    if (_tabController != null) {
+      _tabController!.animateTo(1);
+    }
   }
 
   @override
@@ -51,24 +68,23 @@ class _SplitPageState extends State<SplitPage> {
           ),
         );
       } else {
-        return DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Tab View'),
-              bottom: const TabBar(
-                tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Sessions'),
-                  Tab(icon: Icon(Icons.chat), text: 'Chat'),
-                ],
-              ),
-            ),
-            body: TabBarView(
-              children: [
-                sessionList,
-                chatPage,
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Tab View'),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(icon: Icon(Icons.list), text: 'Sessions'),
+                Tab(icon: Icon(Icons.chat), text: 'Chat'),
               ],
             ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              sessionList,
+              chatPage,
+            ],
           ),
         );
       }
