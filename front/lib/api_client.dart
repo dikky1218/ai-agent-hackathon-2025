@@ -224,7 +224,7 @@ class ApiClient {
     }
   }
 
-  Future<String> createSession(String userId) async {
+  Future<Session> createSession(String userId) async {
     final response = await http.post(
       Uri.parse('$host/apps/learning_agent/users/$userId/sessions'),
       headers: {'Content-Type': 'application/json'},
@@ -238,11 +238,8 @@ class ApiClient {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final sessionId = jsonDecode(response.body)['id'];
-      if (sessionId == null) {
-        throw Exception('セッションIDの作成に失敗しました。');
-      }
-      return sessionId;
+      final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+      return Session.fromJson(responseBody);
     } else {
       throw Exception('Failed to create session: ${response.statusCode}');
     }

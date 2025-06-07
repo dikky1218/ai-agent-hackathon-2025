@@ -31,31 +31,52 @@ class _SessionListWidgetState extends State<SessionListWidget> {
     return sessions;
   }
 
+  Future<void> _createNewSession() async {
+    final newSession = await _apiClient.createSession(widget.userId);
+    widget.onSessionSelected(newSession.id);
+    setState(() {
+      _sessionsFuture = _apiClient.getSessions(widget.userId);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Session>>(
-      future: _sessionsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No sessions found.'));
-        } else {
-          final sessions = snapshot.data!;
-          return ListView.builder(
-            itemCount: sessions.length,
-            itemBuilder: (context, index) {
-              final session = sessions[index];
-              return ListTile(
-                title: Text(session.id),
-                onTap: () => widget.onSessionSelected(session.id),
-              );
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            onPressed: _createNewSession,
+            child: const Text('新しいセッションを開始'),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Session>>(
+            future: _sessionsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('セッションがありません。'));
+              } else {
+                final sessions = snapshot.data!;
+                return ListView.builder(
+                  itemCount: sessions.length,
+                  itemBuilder: (context, index) {
+                    final session = sessions[index];
+                    return ListTile(
+                      title: Text(session.id),
+                      onTap: () => widget.onSessionSelected(session.id),
+                    );
+                  },
+                );
+              }
             },
-          );
-        }
-      },
+          ),
+        ),
+      ],
     );
   }
 } 

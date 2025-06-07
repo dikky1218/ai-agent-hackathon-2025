@@ -95,12 +95,26 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  late final CustomBackendProvider _provider;
-  late final Future<void> _loadHistoryFuture;
+  late CustomBackendProvider _provider;
+  late Future<void> _loadHistoryFuture;
 
   @override
   void initState() {
     super.initState();
+    _resetChat();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.sessionId != oldWidget.sessionId) {
+      setState(() {
+        _resetChat();
+      });
+    }
+  }
+
+  void _resetChat() {
     _provider = CustomBackendProvider(
       userId: widget.userId,
       sessionId: widget.sessionId,
