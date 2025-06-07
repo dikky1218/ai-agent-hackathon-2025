@@ -149,7 +149,7 @@ class Session {
 }
 
 class ApiClient {
-  Future<String> postMessage({
+  Future<List<String>> postMessage({
     required String userId,
     required String sessionId,
     required String prompt,
@@ -175,15 +175,30 @@ class ApiClient {
 
     if (res.statusCode == 200) {
       final decodedBody = jsonDecode(res.body) as List;
+      print('decodedBody: $decodedBody');
       if (decodedBody.isNotEmpty) {
-        final lastMessage = decodedBody.last as Map<String, dynamic>;
-        final parts =
-            (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
-        if (parts.isNotEmpty) {
-          final part = parts.first as Map<String, dynamic>;
-          if (part.containsKey('text')) {
-            return part['text'] as String;
+        final List<String> texts = [];
+        for (final message in decodedBody) {
+          final messageMap = message as Map<String, dynamic>;
+          if (messageMap.containsKey('content') &&
+              messageMap['content'] != null) {
+            final content = messageMap['content'] as Map<String, dynamic>;
+            if (content.containsKey('parts') && content['parts'] != null) {
+              final parts = content['parts'] as List;
+              for (final part in parts) {
+                if (part != null) {
+                  final partMap = part as Map<String, dynamic>;
+                  if (partMap.containsKey('text') && partMap['text'] != null) {
+                    texts.add(partMap['text'] as String);
+                  }
+                }
+              }
+            }
           }
+        }
+
+        if (texts.isNotEmpty) {
+          return texts;
         }
       }
       throw Exception('Invalid response format');

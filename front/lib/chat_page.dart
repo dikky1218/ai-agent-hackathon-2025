@@ -50,12 +50,14 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   Stream<String> generateStream(String prompt,
       {Iterable<Attachment> attachments = const []}) async* {
     try {
-      final reply = await _apiClient.postMessage(
+      final replies = await _apiClient.postMessage(
         userId: userId,
         sessionId: sessionId,
         prompt: prompt,
       );
-      yield reply;
+      for (final reply in replies) {
+        yield reply;
+      }
     } catch (e) {
       throw Exception('Error: $e');
     }
@@ -70,12 +72,14 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final reply = await _apiClient.postMessage(
+      final replies = await _apiClient.postMessage(
           userId: userId, sessionId: sessionId, prompt: prompt);
 
-      llmMessage.append(reply);
-      notifyListeners();
-      yield reply;
+      for (final reply in replies) {
+        llmMessage.append(reply);
+        notifyListeners();
+        yield reply;
+      }
     } catch (e) {
       final error = 'Error: $e';
       llmMessage.append(error);
