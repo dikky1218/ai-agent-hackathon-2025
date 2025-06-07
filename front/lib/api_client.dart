@@ -219,6 +219,30 @@ class ApiClient {
       throw Exception('Failed to get session: ${res.statusCode}');
     }
   }
+
+  Future<String> createSession(String userId) async {
+    final response = await http.post(
+      Uri.parse('$host/apps/learning_agent/users/$userId/sessions'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'appName': 'learning_agent',
+        'events': [],
+        'lastUpdateTime': DateTime.now().millisecondsSinceEpoch / 1000,
+        'state': {},
+        'userId': userId,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final sessionId = jsonDecode(response.body)['id'];
+      if (sessionId == null) {
+        throw Exception('セッションIDの作成に失敗しました。');
+      }
+      return sessionId;
+    } else {
+      throw Exception('Failed to create session: ${response.statusCode}');
+    }
+  }
 }
 
 Future<String> initializeSession(String userId) async {
@@ -227,32 +251,14 @@ Future<String> initializeSession(String userId) async {
   if (sessionId == null) {
     print('sessionId is null, creating new session');
     try {
-      final response = await http.post(
-        Uri.parse(
-            '$host/apps/learning_agent/users/$userId/sessions'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'appName': 'learning_agent',
-          'events': [],
-          'lastUpdateTime': DateTime.now().millisecondsSinceEpoch / 1000,
-          'state': {},
-          'userId': userId,
-        }),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        sessionId = jsonDecode(response.body)['id'];
-        if (sessionId == null) {
-          throw Exception('セッションIDの作成に失敗しました。');
-        }
-        await prefs.setString('sessionId', sessionId);
-      }
+      final apiClient = ApiClient();
+      sessionId = await apiClient.createSession(userId);
+      await prefs.setString('sessionId', sessionId);
     } catch (e) {
-      // Session creation failed. The app will not start if session ID is null.
-      print('Failed to create session on server: $e');
+      throw Exception('セッションIDの作成または取得に失敗しました。');
     }
   } else {
     print('sessionId is not null, using existing session');
-    sessionId = prefs.getString('sessionId');
   }
 
   if (sessionId == null) {
