@@ -5,6 +5,53 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _backendHost =
     String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
 
+const backendUrl = 'http://$_backendHost/run';
+
+class ApiClient {
+  Future<String> postMessage({
+    required String userId,
+    required String sessionId,
+    required String prompt,
+  }) async {
+    final body = {
+      "app_name": "learning_agent",
+      "user_id": userId,
+      "session_id": sessionId,
+      "new_message": {
+        "role": "user",
+        "parts": [
+          {"text": prompt}
+        ]
+      },
+      "streaming": false
+    };
+
+    final res = await http.post(
+      Uri.parse(backendUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode == 200) {
+      final decodedBody = jsonDecode(res.body) as List;
+      if (decodedBody.isNotEmpty) {
+        final lastMessage = decodedBody.last as Map<String, dynamic>;
+        final parts =
+            (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
+        if (parts.isNotEmpty) {
+          final part = parts.first as Map<String, dynamic>;
+          if (part.containsKey('text')) {
+            return part['text'] as String;
+          }
+        }
+      }
+      throw Exception('Invalid response format');
+    } else {
+      throw Exception('Backend error ${res.statusCode}');
+    }
+  }
+}
+
 Future<String> initializeSession(String userId) async {
   final prefs = await SharedPreferences.getInstance();
   var sessionId = prefs.getString('sessionId');

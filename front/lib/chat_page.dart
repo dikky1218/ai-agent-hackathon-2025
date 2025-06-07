@@ -1,17 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
-import 'package:http/http.dart' as http;
-
-const _backendHost =
-    String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
-const backendUrl = 'http://$_backendHost/run'; // エミュレータ↔ローカル
+import 'api_client.dart';
 
 class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   CustomBackendProvider({required this.userId, required this.sessionId});
   final String userId;
   final String sessionId;
   final _history = <ChatMessage>[];
+  final _apiClient = ApiClient();
 
   @override
   Iterable<ChatMessage> get history => _history;
@@ -27,40 +23,12 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   Stream<String> generateStream(String prompt,
       {Iterable<Attachment> attachments = const []}) async* {
     try {
-      final body = {
-        "app_name": "learning_agent",
-        "user_id": userId,
-        "session_id": sessionId,
-        "new_message": {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        },
-        "streaming": false
-      };
-      print(jsonEncode(body));
-      final res = await http.post(Uri.parse(backendUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body));
-
-      if (res.statusCode == 200) {
-        final decodedBody = jsonDecode(res.body) as List;
-        if (decodedBody.isNotEmpty) {
-          final lastMessage = decodedBody.last as Map<String, dynamic>;
-          final parts =
-              (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
-          if (parts.isNotEmpty) {
-            final part = parts.first as Map<String, dynamic>;
-            if (part.containsKey('text')) {
-              final reply = part['text'] as String;
-              yield reply;
-            }
-          }
-        }
-      } else {
-        throw Exception('Backend error ${res.statusCode}');
-      }
+      final reply = await _apiClient.postMessage(
+        userId: userId,
+        sessionId: sessionId,
+        prompt: prompt,
+      );
+      yield reply;
     } catch (e) {
       throw Exception('Error: $e');
     }
@@ -75,45 +43,12 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final body = {
-        "app_name": "learning_agent",
-        "user_id": userId,
-        "session_id": sessionId,
-        "new_message": {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        },
-        "streaming": false
-      };
-      print(jsonEncode(body));
-      final res = await http.post(Uri.parse(backendUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body));
+      final reply = await _apiClient.postMessage(
+          userId: userId, sessionId: sessionId, prompt: prompt);
 
-      if (res.statusCode == 200) {
-        final decodedBody = jsonDecode(res.body) as List;
-        if (decodedBody.isNotEmpty) {
-          final lastMessage = decodedBody.last as Map<String, dynamic>;
-          final parts =
-              (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
-          if (parts.isNotEmpty) {
-            final part = parts.first as Map<String, dynamic>;
-            if (part.containsKey('text')) {
-              final reply = part['text'] as String;
-              llmMessage.append(reply);
-              notifyListeners();
-              yield reply;
-            }
-          }
-        }
-      } else {
-        final error = 'Backend error ${res.statusCode}';
-        llmMessage.append(error);
-        notifyListeners();
-        throw Exception(error);
-      }
+      llmMessage.append(reply);
+      notifyListeners();
+      yield reply;
     } catch (e) {
       final error = 'Error: $e';
       llmMessage.append(error);
