@@ -3,17 +3,36 @@ import 'chat_page.dart';
 import 'session_list_widget.dart';
 
 class SplitPage extends StatefulWidget {
-  const SplitPage({super.key, required this.userId, required this.sessionId});
+  const SplitPage({super.key, required this.userId});
   final String userId;
-  final String sessionId;
 
   @override
   State<SplitPage> createState() => _SplitPageState();
 }
 
 class _SplitPageState extends State<SplitPage> {
+  String? _selectedSessionId;
+
+  void _onSessionSelected(String sessionId) {
+    setState(() {
+      _selectedSessionId = sessionId;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final sessionList = SessionListWidget(
+      userId: widget.userId,
+      onSessionSelected: _onSessionSelected,
+    );
+
+    final chatPage = _selectedSessionId == null
+        ? const Center(child: Text('Select a session'))
+        : ChatPage(
+            userId: widget.userId,
+            sessionId: _selectedSessionId!,
+          );
+
     return LayoutBuilder(builder: (context, constraints) {
       if (constraints.maxWidth > 600) {
         return Scaffold(
@@ -23,15 +42,10 @@ class _SplitPageState extends State<SplitPage> {
           body: Row(
             children: [
               Expanded(
-                child: SessionListWidget(
-                  userId: widget.userId,
-                ),
+                child: sessionList,
               ),
               Expanded(
-                child: ChatPage(
-                  userId: widget.userId,
-                  sessionId: widget.sessionId,
-                ),
+                child: chatPage,
               ),
             ],
           ),
@@ -51,13 +65,8 @@ class _SplitPageState extends State<SplitPage> {
             ),
             body: TabBarView(
               children: [
-                SessionListWidget(
-                  userId: widget.userId,
-                ),
-                ChatPage(
-                  userId: widget.userId,
-                  sessionId: widget.sessionId,
-                ),
+                sessionList,
+                chatPage,
               ],
             ),
           ),

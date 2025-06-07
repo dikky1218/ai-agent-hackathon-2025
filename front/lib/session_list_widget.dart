@@ -3,8 +3,10 @@ import 'api_client.dart';
 
 class SessionListWidget extends StatefulWidget {
   final String userId;
+  final Function(String) onSessionSelected;
 
-  const SessionListWidget({super.key, required this.userId});
+  const SessionListWidget(
+      {super.key, required this.userId, required this.onSessionSelected});
 
   @override
   State<SessionListWidget> createState() => _SessionListWidgetState();
@@ -45,8 +47,10 @@ class _SessionListWidgetState extends State<SessionListWidget> {
           return ListView.builder(
             itemCount: sessions.length,
             itemBuilder: (context, index) {
+              final session = sessions[index];
               return ListTile(
-                title: Text(sessions[index].id),
+                title: Text(session.id),
+                onTap: () => widget.onSessionSelected(session.id),
               );
             },
           );
