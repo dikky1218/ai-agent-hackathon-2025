@@ -28,6 +28,7 @@ class _SessionListWidgetState extends State<SessionListWidget> {
       await _apiClient.createSession(widget.userId);
       sessions = await _apiClient.getSessions(widget.userId);
     }
+    sessions.sort((a, b) => b.lastUpdateTime.compareTo(a.lastUpdateTime));
     return sessions;
   }
 
@@ -35,7 +36,7 @@ class _SessionListWidgetState extends State<SessionListWidget> {
     final newSession = await _apiClient.createSession(widget.userId);
     widget.onSessionSelected(newSession.id);
     setState(() {
-      _sessionsFuture = _apiClient.getSessions(widget.userId);
+      _sessionsFuture = _fetchAndCreateSessions();
     });
   }
 
