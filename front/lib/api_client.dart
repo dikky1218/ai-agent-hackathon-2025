@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _backendHost =
     String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
 
-const backendUrl = 'http://$_backendHost/run';
+const host = 'http://$_backendHost';
 
 class ApiClient {
   Future<String> postMessage({
@@ -27,7 +27,7 @@ class ApiClient {
     };
 
     final res = await http.post(
-      Uri.parse(backendUrl),
+      Uri.parse('$host/run'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
@@ -60,7 +60,7 @@ Future<String> initializeSession(String userId) async {
     try {
       final response = await http.post(
         Uri.parse(
-            'http://$_backendHost/apps/learning_agent/users/$userId/sessions'),
+            '$host/apps/learning_agent/users/$userId/sessions'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'appName': 'learning_agent',
