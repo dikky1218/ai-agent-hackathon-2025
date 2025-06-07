@@ -244,25 +244,3 @@ class ApiClient {
     }
   }
 }
-
-Future<String> initializeSession(String userId) async {
-  final prefs = await SharedPreferences.getInstance();
-  var sessionId = prefs.getString('sessionId');
-  if (sessionId == null) {
-    print('sessionId is null, creating new session');
-    try {
-      final apiClient = ApiClient();
-      sessionId = await apiClient.createSession(userId);
-      await prefs.setString('sessionId', sessionId);
-    } catch (e) {
-      throw Exception('セッションIDの作成または取得に失敗しました。');
-    }
-  } else {
-    print('sessionId is not null, using existing session');
-  }
-
-  if (sessionId == null) {
-    throw Exception('セッションIDの作成または取得に失敗しました。');
-  }
-  return sessionId;
-} 
