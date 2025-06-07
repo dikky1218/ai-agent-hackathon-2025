@@ -1,20 +1,45 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
-import 'package:http/http.dart' as http;
-
-const _backendHost =
-    String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
-const backendUrl = 'http://$_backendHost/run'; // エミュレータ↔ローカル
+import 'api_client.dart';
 
 class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   CustomBackendProvider({required this.userId, required this.sessionId});
   final String userId;
   final String sessionId;
   final _history = <ChatMessage>[];
+  final _apiClient = ApiClient();
 
   @override
   Iterable<ChatMessage> get history => _history;
+
+  Future<void> loadHistory() async {
+    try {
+      final session = await _apiClient.getSession(userId, sessionId);
+      final messages = session.events.expand<ChatMessage>((event) {
+        final text = event.content.parts
+            .where((part) => part.text != null)
+            .map((part) => part.text!)
+            .join('\\n');
+
+        if (event.author == 'user') {
+          return [ChatMessage.user(text, [])];
+        } else if (text.isNotEmpty) {
+          return [ChatMessage.llm()..append(text)];
+        }
+        return [];
+      }).toList();
+      print('messages: $messages');
+
+      _history.clear();
+      _history.addAll(messages);
+      notifyListeners();
+    } catch (e) {
+      // Handle or log error appropriately
+      print('Error loading chat history: $e');
+      _history.add(ChatMessage.llm()..append('Failed to load chat history.'));
+      notifyListeners();
+    }
+  }
 
   @override
   set history(Iterable<ChatMessage> history) {
@@ -27,39 +52,13 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   Stream<String> generateStream(String prompt,
       {Iterable<Attachment> attachments = const []}) async* {
     try {
-      final body = {
-        "app_name": "learning_agent",
-        "user_id": userId,
-        "session_id": sessionId,
-        "new_message": {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        },
-        "streaming": false
-      };
-      print(jsonEncode(body));
-      final res = await http.post(Uri.parse(backendUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body));
-
-      if (res.statusCode == 200) {
-        final decodedBody = jsonDecode(res.body) as List;
-        if (decodedBody.isNotEmpty) {
-          final lastMessage = decodedBody.last as Map<String, dynamic>;
-          final parts =
-              (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
-          if (parts.isNotEmpty) {
-            final part = parts.first as Map<String, dynamic>;
-            if (part.containsKey('text')) {
-              final reply = part['text'] as String;
-              yield reply;
-            }
-          }
-        }
-      } else {
-        throw Exception('Backend error ${res.statusCode}');
+      final replies = await _apiClient.postMessage(
+        userId: userId,
+        sessionId: sessionId,
+        prompt: prompt,
+      );
+      for (final reply in replies) {
+        yield reply;
       }
     } catch (e) {
       throw Exception('Error: $e');
@@ -75,44 +74,13 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final body = {
-        "app_name": "learning_agent",
-        "user_id": userId,
-        "session_id": sessionId,
-        "new_message": {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        },
-        "streaming": false
-      };
-      print(jsonEncode(body));
-      final res = await http.post(Uri.parse(backendUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body));
+      final replies = await _apiClient.postMessage(
+          userId: userId, sessionId: sessionId, prompt: prompt);
 
-      if (res.statusCode == 200) {
-        final decodedBody = jsonDecode(res.body) as List;
-        if (decodedBody.isNotEmpty) {
-          final lastMessage = decodedBody.last as Map<String, dynamic>;
-          final parts =
-              (lastMessage['content'] as Map<String, dynamic>)['parts'] as List;
-          if (parts.isNotEmpty) {
-            final part = parts.first as Map<String, dynamic>;
-            if (part.containsKey('text')) {
-              final reply = part['text'] as String;
-              llmMessage.append(reply);
-              notifyListeners();
-              yield reply;
-            }
-          }
-        }
-      } else {
-        final error = 'Backend error ${res.statusCode}';
-        llmMessage.append(error);
+      for (final reply in replies) {
+        llmMessage.append(reply);
         notifyListeners();
-        throw Exception(error);
+        yield reply;
       }
     } catch (e) {
       final error = 'Error: $e';
@@ -133,11 +101,49 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  late CustomBackendProvider _provider;
+  late Future<void> _loadHistoryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _resetChat();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.sessionId != oldWidget.sessionId) {
+      setState(() {
+        _resetChat();
+      });
+    }
+  }
+
+  void _resetChat() {
+    _provider = CustomBackendProvider(
+      userId: widget.userId,
+      sessionId: widget.sessionId,
+    );
+    _loadHistoryFuture = _provider.loadHistory();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: LlmChatView(
-          provider: CustomBackendProvider(
-              userId: widget.userId, sessionId: widget.sessionId),
+        appBar: AppBar(title: const Text('Chat')),
+        body: FutureBuilder<void>(
+          future: _loadHistoryFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              return LlmChatView(
+                provider: _provider,
+              );
+            }
+          },
         ),
       );
 } 

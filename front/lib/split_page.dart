@@ -1,18 +1,55 @@
 import 'package:flutter/material.dart';
 import 'chat_page.dart';
+import 'session_list_widget.dart';
 
 class SplitPage extends StatefulWidget {
-  const SplitPage({super.key, required this.userId, required this.sessionId});
+  const SplitPage({super.key, required this.userId});
   final String userId;
-  final String sessionId;
 
   @override
   State<SplitPage> createState() => _SplitPageState();
 }
 
-class _SplitPageState extends State<SplitPage> {
+class _SplitPageState extends State<SplitPage>
+    with SingleTickerProviderStateMixin {
+  String? _selectedSessionId;
+  TabController? _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  void _onSessionSelected(String sessionId) {
+    setState(() {
+      _selectedSessionId = sessionId;
+    });
+    if (_tabController != null) {
+      _tabController!.animateTo(1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final sessionList = SessionListWidget(
+      userId: widget.userId,
+      onSessionSelected: _onSessionSelected,
+    );
+
+    final chatPage = _selectedSessionId == null
+        ? const Center(child: Text('Select a session'))
+        : ChatPage(
+            userId: widget.userId,
+            sessionId: _selectedSessionId!,
+          );
+
     return LayoutBuilder(builder: (context, constraints) {
       if (constraints.maxWidth > 600) {
         return Scaffold(
@@ -22,49 +59,32 @@ class _SplitPageState extends State<SplitPage> {
           body: Row(
             children: [
               Expanded(
-                child: Container(
-                  color: Colors.blueGrey[100],
-                  child: const Center(
-                    child: Text('Side Content'),
-                  ),
-                ),
+                child: sessionList,
               ),
               Expanded(
-                child: ChatPage(
-                  userId: widget.userId,
-                  sessionId: widget.sessionId,
-                ),
+                child: chatPage,
               ),
             ],
           ),
         );
       } else {
-        return DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Tab View'),
-              bottom: const TabBar(
-                tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Side Content'),
-                  Tab(icon: Icon(Icons.chat), text: 'Chat'),
-                ],
-              ),
-            ),
-            body: TabBarView(
-              children: [
-                Container(
-                  color: Colors.blueGrey[100],
-                  child: const Center(
-                    child: Text('Side Content'),
-                  ),
-                ),
-                ChatPage(
-                  userId: widget.userId,
-                  sessionId: widget.sessionId,
-                ),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Tab View'),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(icon: Icon(Icons.list), text: 'Sessions'),
+                Tab(icon: Icon(Icons.chat), text: 'Chat'),
               ],
             ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              sessionList,
+              chatPage,
+            ],
           ),
         );
       }
