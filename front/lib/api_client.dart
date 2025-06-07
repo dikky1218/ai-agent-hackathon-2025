@@ -7,9 +7,116 @@ const _backendHost =
 
 const host = 'http://$_backendHost';
 
+class FunctionResponse {
+  final String id;
+  final String name;
+  final Map<String, dynamic> response;
+
+  FunctionResponse(
+      {required this.id, required this.name, required this.response});
+
+  factory FunctionResponse.fromJson(Map<String, dynamic> json) {
+    return FunctionResponse(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      response: json['response'] as Map<String, dynamic>,
+    );
+  }
+}
+
+class FunctionCall {
+  final String id;
+  final Map<String, dynamic> args;
+  final String name;
+
+  FunctionCall({required this.id, required this.args, required this.name});
+
+  factory FunctionCall.fromJson(Map<String, dynamic> json) {
+    return FunctionCall(
+      id: json['id'] as String,
+      args: json['args'] as Map<String, dynamic>,
+      name: json['name'] as String,
+    );
+  }
+}
+
+class Part {
+  final String? text;
+  final FunctionCall? functionCall;
+  final FunctionResponse? functionResponse;
+
+  Part({this.text, this.functionCall, this.functionResponse});
+
+  factory Part.fromJson(Map<String, dynamic> json) {
+    return Part(
+      text: json['text'] as String?,
+      functionCall: json.containsKey('functionCall')
+          ? FunctionCall.fromJson(json['functionCall'] as Map<String, dynamic>)
+          : null,
+      functionResponse: json.containsKey('functionResponse')
+          ? FunctionResponse.fromJson(
+              json['functionResponse'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class Content {
+  final List<Part> parts;
+  final String role;
+
+  Content({required this.parts, required this.role});
+
+  factory Content.fromJson(Map<String, dynamic> json) {
+    final partsList = json['parts'] as List;
+    final parts = partsList
+        .map((partJson) => Part.fromJson(partJson as Map<String, dynamic>))
+        .toList();
+    return Content(
+      parts: parts,
+      role: json['role'] as String,
+    );
+  }
+}
+
+class Event {
+  final Content content;
+  final String? invocationId;
+  final String author;
+  final Map<String, dynamic> actions;
+  final String id;
+  final double timestamp;
+  final Map<String, dynamic>? usageMetadata;
+  final List<dynamic>? longRunningToolIds;
+
+  Event({
+    required this.content,
+    this.invocationId,
+    required this.author,
+    required this.actions,
+    required this.id,
+    required this.timestamp,
+    this.usageMetadata,
+    this.longRunningToolIds,
+  });
+
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
+      content: Content.fromJson(json['content'] as Map<String, dynamic>),
+      invocationId: json['invocationId'] as String?,
+      author: json['author'] as String,
+      actions: json['actions'] as Map<String, dynamic>,
+      id: json['id'] as String,
+      timestamp: (json['timestamp'] as num).toDouble(),
+      usageMetadata: json['usageMetadata'] as Map<String, dynamic>?,
+      longRunningToolIds: json['longRunningToolIds'] as List<dynamic>?,
+    );
+  }
+}
+
 class Session {
   final String appName;
-  final List<dynamic> events;
+  final List<Event> events;
   final String id;
   final double lastUpdateTime;
   final Map<String, dynamic> state;
@@ -25,9 +132,13 @@ class Session {
   });
 
   factory Session.fromJson(Map<String, dynamic> json) {
+    final eventsData = json['events'] as List<dynamic>;
+    final events = eventsData
+        .map((eventJson) => Event.fromJson(eventJson as Map<String, dynamic>))
+        .toList();
     return Session(
       appName: json['appName'] as String,
-      events: json['events'] as List<dynamic>,
+      events: events,
       id: json['id'] as String,
       lastUpdateTime: (json['lastUpdateTime'] as num).toDouble(),
       state: json['state'] as Map<String, dynamic>,
@@ -93,6 +204,19 @@ class ApiClient {
           .toList();
     } else {
       throw Exception('Failed to get sessions: ${res.statusCode}');
+    }
+  }
+
+  Future<Session> getSession(String userId, String sessionId) async {
+    final res = await http.get(
+      Uri.parse('$host/apps/learning_agent/users/$userId/sessions/$sessionId'),
+    );
+
+    if (res.statusCode == 200) {
+      final decodedBody = jsonDecode(res.body) as Map<String, dynamic>;
+      return Session.fromJson(decodedBody);
+    } else {
+      throw Exception('Failed to get session: ${res.statusCode}');
     }
   }
 }
