@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _backendHost =
     String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
 
-Future<String> initializeSession(SharedPreferences prefs, String userId) async {
+Future<String> initializeSession(String userId) async {
+  final prefs = await SharedPreferences.getInstance();
   var sessionId = prefs.getString('sessionId');
   if (sessionId == null) {
     print('sessionId is null, creating new session');

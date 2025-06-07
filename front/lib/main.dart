@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import 'split_page.dart';
 import 'api_client.dart';
+import 'services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getString('userId') ?? const Uuid().v4();
-  await prefs.setString('userId', userId);
-
-  final sessionId = await initializeSession(prefs, userId);
+  final userId = await getOrCreateUserId();
+  final sessionId = await initializeSession(userId);
   print('sessionId: $sessionId');
   print('userId: $userId');
 
