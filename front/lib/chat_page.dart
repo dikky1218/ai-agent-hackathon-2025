@@ -15,16 +15,18 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   Future<void> loadHistory() async {
     try {
       final session = await _apiClient.getSession(userId, sessionId);
-      final messages = session.events.map<ChatMessage>((event) {
+      final messages = session.events.expand<ChatMessage>((event) {
         final text = event.content.parts
             .where((part) => part.text != null)
-            .map((part) => part.text)
+            .map((part) => part.text!)
             .join('\\n');
+
         if (event.author == 'user') {
-          return ChatMessage.user(text, []);
-        } else {
-          return ChatMessage.llm()..append(text);
+          return [ChatMessage.user(text, [])];
+        } else if (text.isNotEmpty) {
+          return [ChatMessage.llm()..append(text)];
         }
+        return [];
       }).toList();
       print('messages: $messages');
 
