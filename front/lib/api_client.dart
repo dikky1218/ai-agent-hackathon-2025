@@ -68,8 +68,9 @@ class Content {
   Content({required this.parts, required this.role});
 
   factory Content.fromJson(Map<String, dynamic> json) {
-    final partsList = json['parts'] as List;
+    final partsList = json['parts'] as List<dynamic>? ?? [];
     final parts = partsList
+        .where((partJson) => partJson != null)
         .map((partJson) => Part.fromJson(partJson as Map<String, dynamic>))
         .toList();
     return Content(
@@ -105,7 +106,7 @@ class Event {
       content: Content.fromJson(json['content'] as Map<String, dynamic>),
       invocationId: json['invocationId'] as String?,
       author: json['author'] as String,
-      actions: json['actions'] as Map<String, dynamic>,
+      actions: json['actions'] as Map<String, dynamic>? ?? {},
       id: json['id'] as String,
       timestamp: (json['timestamp'] as num).toDouble(),
       usageMetadata: json['usageMetadata'] as Map<String, dynamic>?,
@@ -132,8 +133,11 @@ class Session {
   });
 
   factory Session.fromJson(Map<String, dynamic> json) {
-    final eventsData = json['events'] as List<dynamic>;
+    final eventsData = json['events'] as List<dynamic>? ?? [];
     final events = eventsData
+        .where((eventJson) =>
+            eventJson != null &&
+            (eventJson as Map<String, dynamic>)['content'] != null)
         .map((eventJson) => Event.fromJson(eventJson as Map<String, dynamic>))
         .toList();
     return Session(
@@ -141,7 +145,7 @@ class Session {
       events: events,
       id: json['id'] as String,
       lastUpdateTime: (json['lastUpdateTime'] as num).toDouble(),
-      state: json['state'] as Map<String, dynamic>,
+      state: json['state'] as Map<String, dynamic>? ?? {},
       userId: json['userId'] as String,
     );
   }

@@ -12,6 +12,33 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   @override
   Iterable<ChatMessage> get history => _history;
 
+  Future<void> loadHistory() async {
+    try {
+      final session = await _apiClient.getSession(userId, sessionId);
+      final messages = session.events.map<ChatMessage>((event) {
+        final text = event.content.parts
+            .where((part) => part.text != null)
+            .map((part) => part.text)
+            .join('\\n');
+        if (event.author == 'user') {
+          return ChatMessage.user(text, []);
+        } else {
+          return ChatMessage.llm()..append(text);
+        }
+      }).toList();
+      print('messages: $messages');
+
+      _history.clear();
+      _history.addAll(messages);
+      notifyListeners();
+    } catch (e) {
+      // Handle or log error appropriately
+      print('Error loading chat history: $e');
+      _history.add(ChatMessage.llm()..append('Failed to load chat history.'));
+      notifyListeners();
+    }
+  }
+
   @override
   set history(Iterable<ChatMessage> history) {
     _history.clear();
@@ -68,11 +95,35 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  late final CustomBackendProvider _provider;
+  late final Future<void> _loadHistoryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = CustomBackendProvider(
+      userId: widget.userId,
+      sessionId: widget.sessionId,
+    );
+    _loadHistoryFuture = _provider.loadHistory();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: LlmChatView(
-          provider: CustomBackendProvider(
-              userId: widget.userId, sessionId: widget.sessionId),
+        appBar: AppBar(title: const Text('Chat')),
+        body: FutureBuilder<void>(
+          future: _loadHistoryFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              return LlmChatView(
+                provider: _provider,
+              );
+            }
+          },
         ),
       );
 } 
