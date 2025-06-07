@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 
 const host = String.fromEnvironment('BACKEND_HOST', defaultValue: 'http://10.0.2.2:8000');
 
@@ -153,16 +154,30 @@ class ApiClient {
     required String userId,
     required String sessionId,
     required String prompt,
+    Iterable<Attachment> attachments = const [],
   }) async {
+    final parts = <Map<String, dynamic>>[];
+    if (prompt.isNotEmpty) {
+      parts.add({'text': prompt});
+    }
+
+    for (final attachment in attachments) {
+      if (attachment is FileAttachment) {
+        parts.add({
+          'inlineData': {
+            'data': base64Encode(attachment.bytes),
+            'mimeType': attachment.mimeType,
+          }
+        });
+      }
+    }
     final body = {
       "app_name": "learning_agent",
       "user_id": userId,
       "session_id": sessionId,
       "new_message": {
         "role": "user",
-        "parts": [
-          {"text": prompt}
-        ]
+        "parts": parts,
       },
       "streaming": false
     };

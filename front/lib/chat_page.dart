@@ -56,6 +56,7 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
         userId: userId,
         sessionId: sessionId,
         prompt: prompt,
+        attachments: attachments,
       );
       for (final reply in replies) {
         yield reply;
@@ -75,7 +76,10 @@ class CustomBackendProvider extends LlmProvider with ChangeNotifier {
 
     try {
       final replies = await _apiClient.postMessage(
-          userId: userId, sessionId: sessionId, prompt: prompt);
+          userId: userId,
+          sessionId: sessionId,
+          prompt: prompt,
+          attachments: attachments);
 
       for (final reply in replies) {
         llmMessage.append(reply);
