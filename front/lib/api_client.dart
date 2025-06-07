@@ -2,10 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _backendHost =
-    String.fromEnvironment('BACKEND_HOST', defaultValue: '10.0.2.2:8000');
-
-const host = 'http://$_backendHost';
+const host = String.fromEnvironment('BACKEND_HOST', defaultValue: 'http://10.0.2.2:8000');
 
 class FunctionResponse {
   final String id;
