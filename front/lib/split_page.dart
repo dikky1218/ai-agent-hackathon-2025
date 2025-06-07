@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chat_page.dart';
+import 'session_list_widget.dart';
 
 class SplitPage extends StatefulWidget {
   const SplitPage({super.key, required this.userId, required this.sessionId});
@@ -22,11 +23,8 @@ class _SplitPageState extends State<SplitPage> {
           body: Row(
             children: [
               Expanded(
-                child: Container(
-                  color: Colors.blueGrey[100],
-                  child: const Center(
-                    child: Text('Side Content'),
-                  ),
+                child: SessionListWidget(
+                  userId: widget.userId,
                 ),
               ),
               Expanded(
@@ -46,18 +44,15 @@ class _SplitPageState extends State<SplitPage> {
               title: const Text('Tab View'),
               bottom: const TabBar(
                 tabs: [
-                  Tab(icon: Icon(Icons.list), text: 'Side Content'),
+                  Tab(icon: Icon(Icons.list), text: 'Sessions'),
                   Tab(icon: Icon(Icons.chat), text: 'Chat'),
                 ],
               ),
             ),
             body: TabBarView(
               children: [
-                Container(
-                  color: Colors.blueGrey[100],
-                  child: const Center(
-                    child: Text('Side Content'),
-                  ),
+                SessionListWidget(
+                  userId: widget.userId,
                 ),
                 ChatPage(
                   userId: widget.userId,
