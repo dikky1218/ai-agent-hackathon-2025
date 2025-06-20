@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 
-class PageViewSection extends StatelessWidget {
+class PageViewSection extends StatefulWidget {
   final double height;
 
   const PageViewSection({
@@ -12,13 +11,47 @@ class PageViewSection extends StatelessWidget {
   });
 
   @override
+  State<PageViewSection> createState() => _PageViewSectionState();
+}
+
+class _PageViewSectionState extends State<PageViewSection> {
+  late PageController _pageController;
+  int _previousAiMessageCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         final aiMessages = chatProvider.aiMessages;
         
+        // AIメッセージが増えた場合、最新のメッセージに自動遷移
+        if (aiMessages.length > _previousAiMessageCount && aiMessages.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_pageController.hasClients) {
+              _pageController.animateToPage(
+                aiMessages.length - 1,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        }
+        _previousAiMessageCount = aiMessages.length;
+        
         return SizedBox(
-          height: height,
+          height: widget.height,
           child: aiMessages.isEmpty
               ? const Center(
                   child: Text(
@@ -27,6 +60,7 @@ class PageViewSection extends StatelessWidget {
                   ),
                 )
               : PageView.builder(
+                  controller: _pageController,
                   itemCount: aiMessages.length,
                   itemBuilder: (context, index) {
                     final message = aiMessages[index];
