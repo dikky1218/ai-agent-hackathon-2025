@@ -142,52 +142,101 @@ class _ChatPageState extends State<ChatPage> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else {
-              return DraggableScrollableSheet(
-                initialChildSize: 0.9,
-                minChildSize: 0.3,
-                maxChildSize: 1.0,
-                snap: true,
-                snapSizes: const [0.3, 0.6, 0.9],
-                builder: (context, scrollController) {
-                  return Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16.0),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 8.0,
-                          offset: Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // ドラッグハンドル
-                        Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[400],
-                            borderRadius: BorderRadius.circular(2),
+              return Stack(
+                children: [
+                  // 背景のPageView
+                  PageView.builder(
+                    itemCount: 3, // ページ数を指定
+                    itemBuilder: (context, index) {
+                      return Container(
+                        color: _getPageColor(index),
+                        child: Center(
+                          child: Text(
+                            'Page ${index + 1}',
+                            style: const TextStyle(fontSize: 24, color: Colors.white),
                           ),
                         ),
-                        // チャットビュー
-                        Expanded(
-                          child: LlmChatView(
-                            provider: _provider,
+                      );
+                    },
+                  ),
+                  // DraggableScrollableSheet
+                  DraggableScrollableSheet(
+                    initialChildSize: 0.4,
+                    minChildSize: 0.1,
+                    maxChildSize: 0.9,
+                    snap: true,
+                    snapSizes: const [0.1, 0.4, 0.9],
+                    builder: (context, scrollController) {
+                      return Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16.0),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 8.0,
+                              offset: Offset(0, -2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                        child: Column(
+                          children: [
+                            // ドラッグハンドル
+                            GestureDetector(
+                              onVerticalDragUpdate: (details) {
+                                // ドラッグハンドルでのスクロール操作を有効化
+                                scrollController.animateTo(
+                                  scrollController.offset - details.delta.dy,
+                                  duration: const Duration(milliseconds: 1),
+                                  curve: Curves.linear,
+                                );
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Center(
+                                  child: Container(
+                                    width: 40,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[400],
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // チャットビュー
+                            Expanded(
+                              child: LlmChatView(
+                                provider: _provider,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               );
             }
           },
         ),
       );
+
+  // ヘルパーメソッド
+  Color _getPageColor(int index) {
+    switch (index) {
+      case 0:
+        return Colors.blue;
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
 } 
