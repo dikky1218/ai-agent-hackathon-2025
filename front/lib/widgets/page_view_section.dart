@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
 
 class PageViewSection extends StatefulWidget {
@@ -80,11 +81,44 @@ class _PageViewSectionState extends State<PageViewSection> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Text(
-                              message.text ?? '',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
+                            MarkdownBody(
+                              data: message.text ?? '',
+                              styleSheet: MarkdownStyleSheet(
+                                p: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                                h1: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                h2: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                h3: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                code: TextStyle(
+                                  backgroundColor: Colors.black.withValues(alpha: 0.2),
+                                  color: Colors.white,
+                                  fontFamily: 'monospace',
+                                ),
+                                codeblockDecoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                blockquote: const TextStyle(
+                                  color: Colors.white70,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                listBullet: const TextStyle(
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
