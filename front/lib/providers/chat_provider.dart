@@ -5,12 +5,14 @@ import '../api_client.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
-  List<ChatMessage> _messages = [];
+  List<ChatMessage> _userMessages = [];
+  List<ChatMessage> _aiMessages = [];
   bool _isLoading = false;
   String? _errorMessage;
   XFile? _selectedImage;
 
-  List<ChatMessage> get messages => _messages;
+  List<ChatMessage> get userMessages => _userMessages;
+  List<ChatMessage> get aiMessages => _aiMessages;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   XFile? get selectedImage => _selectedImage;
@@ -50,7 +52,8 @@ class ChatProvider extends ChangeNotifier {
         return <ChatMessage>[];
       }).toList();
 
-      _messages = messages;
+      _userMessages = messages.where((msg) => msg.origin == MessageOrigin.user).toList();
+      _aiMessages = messages.where((msg) => msg.origin == MessageOrigin.llm).toList();
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -76,7 +79,8 @@ class ChatProvider extends ChangeNotifier {
     }
 
     // ユーザーメッセージを即座に追加
-    _messages.add(ChatMessage.user(text, attachments));
+    final userMessage = ChatMessage.user(text, attachments);
+    _userMessages.add(userMessage);
     _selectedImage = null;
     notifyListeners();
 
@@ -94,10 +98,10 @@ class ChatProvider extends ChangeNotifier {
         llmMessage.append(reply);
       }
       
-      _messages.add(llmMessage);
+      _aiMessages.add(llmMessage);
       notifyListeners();
     } catch (e) {
-      _messages.add(ChatMessage.llm()..append('エラー: $e'));
+      _aiMessages.add(ChatMessage.llm()..append('エラー: $e'));
       notifyListeners();
     }
   }
