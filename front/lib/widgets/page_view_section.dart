@@ -20,6 +20,7 @@ class _PageViewSectionState extends State<PageViewSection> {
   late PageController _pageController;
   int _previousAiMessageCount = 0;
   int _currentPageIndex = 0; // 現在のページインデックスを追跡
+  bool _isInitialLoad = true; // 初回読み込みかどうかを追跡
 
   @override
   void initState() {
@@ -61,16 +62,25 @@ class _PageViewSectionState extends State<PageViewSection> {
       builder: (context, chatProvider, child) {
         final aiMessages = chatProvider.aiMessages;
         
-        // AIメッセージが増えた場合、最新のメッセージに自動遷移
+        // AIメッセージが増えた場合の処理
         if (aiMessages.length > _previousAiMessageCount && aiMessages.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (_pageController.hasClients) {
-              final newIndex = aiMessages.length - 1;
+              int targetIndex;
+              if (_isInitialLoad) {
+                // 初回読み込み時は1ページ目を表示
+                targetIndex = 0;
+                _isInitialLoad = false;
+              } else {
+                // 2回目以降は最新のメッセージに自動遷移
+                targetIndex = aiMessages.length - 1;
+              }
+              
               setState(() {
-                _currentPageIndex = newIndex;
+                _currentPageIndex = targetIndex;
               });
               _pageController.animateToPage(
-                newIndex,
+                targetIndex,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
