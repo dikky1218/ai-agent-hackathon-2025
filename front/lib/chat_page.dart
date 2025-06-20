@@ -1,99 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
-import 'api_client.dart';
-
-class CustomBackendProvider extends LlmProvider with ChangeNotifier {
-  CustomBackendProvider({required this.userId, required this.sessionId});
-  final String userId;
-  final String sessionId;
-  final _history = <ChatMessage>[];
-  final _apiClient = ApiClient();
-
-  @override
-  Iterable<ChatMessage> get history => _history;
-
-  Future<void> loadHistory() async {
-    try {
-      final session = await _apiClient.getSession(userId, sessionId);
-      final messages = session.events.expand<ChatMessage>((event) {
-        final text = event.content.parts
-            .where((part) => part.text != null)
-            .map((part) => part.text!)
-            .join('\\n');
-
-        if (event.author == 'user') {
-          return [ChatMessage.user(text, [])];
-        } else if (text.isNotEmpty) {
-          return [ChatMessage.llm()..append(text)];
-        }
-        return [];
-      }).toList();
-      print('messages: $messages');
-
-      _history.clear();
-      _history.addAll(messages);
-      notifyListeners();
-    } catch (e) {
-      // Handle or log error appropriately
-      print('Error loading chat history: $e');
-      _history.add(ChatMessage.llm()..append('Failed to load chat history.'));
-      notifyListeners();
-    }
-  }
-
-  @override
-  set history(Iterable<ChatMessage> history) {
-    _history.clear();
-    _history.addAll(history);
-    notifyListeners();
-  }
-
-  @override
-  Stream<String> generateStream(String prompt,
-      {Iterable<Attachment> attachments = const []}) async* {
-    try {
-      final replies = await _apiClient.postMessage(
-        userId: userId,
-        sessionId: sessionId,
-        prompt: prompt,
-        attachments: attachments,
-      );
-      for (final reply in replies) {
-        yield reply;
-      }
-    } catch (e) {
-      throw Exception('Error: $e');
-    }
-  }
-
-  @override
-  Stream<String> sendMessageStream(String prompt,
-      {Iterable<Attachment> attachments = const []}) async* {
-    final userMessage = ChatMessage.user(prompt, attachments);
-    final llmMessage = ChatMessage.llm();
-    _history.addAll([userMessage, llmMessage]);
-    notifyListeners();
-
-    try {
-      final replies = await _apiClient.postMessage(
-          userId: userId,
-          sessionId: sessionId,
-          prompt: prompt,
-          attachments: attachments);
-
-      for (final reply in replies) {
-        llmMessage.append(reply);
-        notifyListeners();
-        yield reply;
-      }
-    } catch (e) {
-      final error = 'Error: $e';
-      llmMessage.append(error);
-      notifyListeners();
-      throw Exception(error);
-    }
-  }
-}
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'chat_input_widget.dart';
+import 'providers/chat_provider.dart';
+import 'services/speech_service.dart';
+import 'services/image_picker_service.dart';
+import 'widgets/chat_sheet.dart';
+import 'widgets/page_view_section.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, required this.userId, required this.sessionId});
@@ -105,49 +18,128 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  late CustomBackendProvider _provider;
-  late Future<void> _loadHistoryFuture;
+  final _scrollableController = DraggableScrollableController();
+  double _sheetSize = 0.4;
+  late ChatProvider _chatProvider;
+  late SpeechService _speechService;
 
   @override
   void initState() {
     super.initState();
-    _resetChat();
+    _chatProvider = ChatProvider();
+    _speechService = SpeechService();
+    _speechService.initialize();
+    _chatProvider.loadMessageHistory(widget.userId, widget.sessionId);
+    
+    _scrollableController.addListener(() {
+      if (mounted && _scrollableController.isAttached) {
+        setState(() {
+          _sheetSize = _scrollableController.size;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollableController.dispose();
+    _speechService.dispose();
+    _chatProvider.dispose();
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant ChatPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.sessionId != oldWidget.sessionId) {
-      setState(() {
-        _resetChat();
-      });
+      _chatProvider.loadMessageHistory(widget.userId, widget.sessionId);
     }
   }
 
-  void _resetChat() {
-    _provider = CustomBackendProvider(
-      userId: widget.userId,
-      sessionId: widget.sessionId,
-    );
-    _loadHistoryFuture = _provider.loadHistory();
+  void _handleSendMessage(String text) {
+    _chatProvider.sendMessage(widget.userId, widget.sessionId, text);
+    _speechService.clearLastWords();
   }
 
+  void _pickImage(ImageSource source) async {
+    final image = await ImagePickerService.pickImage(source);
+    if (image != null) {
+      _chatProvider.setSelectedImage(image);
+    }
+  }
+
+  void _showAttachmentPicker() {
+    ImagePickerService.showImageSourcePicker(context, _pickImage);
+  }
+
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Chat')),
-        body: FutureBuilder<void>(
-          future: _loadHistoryFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else {
-              return LlmChatView(
-                provider: _provider,
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _chatProvider),
+        ChangeNotifierProvider.value(value: _speechService),
+      ],
+      child: Consumer2<ChatProvider, SpeechService>(
+        builder: (context, chatProvider, speechService, child) {
+          final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+          const chatInputAreaHeight = 60.0;
+          final bottomAreaHeight = keyboardHeight + chatInputAreaHeight;
+
+          return Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: LayoutBuilder(builder: (context, constraints) {
+              final sheetContainerHeight = constraints.maxHeight - bottomAreaHeight;
+              final pageViewHeight = (sheetContainerHeight * (1 - _sheetSize)).clamp(0.0, double.infinity);
+
+              return Stack(
+                children: [
+                  // 背景
+                  Container(color: Colors.grey[200]),
+                  // PageView
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: pageViewHeight,
+                    child: PageViewSection(height: pageViewHeight),
+                  ),
+                  // チャットシート
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: bottomAreaHeight,
+                    child: ChatSheet(
+                      controller: _scrollableController,
+                      messages: chatProvider.userMessages.reversed.toList(),
+                      isLoading: chatProvider.isLoading,
+                      errorMessage: chatProvider.errorMessage,
+                      onRetry: () => chatProvider.loadMessageHistory(widget.userId, widget.sessionId),
+                    ),
+                  ),
+                  // チャット入力
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: keyboardHeight,
+                    child: ChatInputWidget(
+                      onSendMessage: _handleSendMessage,
+                      onAttachmentPressed: _showAttachmentPicker,
+                      selectedImage: chatProvider.selectedImage,
+                      onClearAttachment: chatProvider.clearSelectedImage,
+                      onStartRecording: speechService.startListening,
+                      onStopRecording: speechService.stopListening,
+                      isRecording: speechService.isListening,
+                      text: speechService.lastWords,
+                    ),
+                  ),
+                ],
               );
-            }
-          },
-        ),
-      );
+            }),
+          );
+        },
+      ),
+    );
+  }
 } 

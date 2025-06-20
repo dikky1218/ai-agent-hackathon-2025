@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'chat_page.dart';
 import 'session_list_widget.dart';
+import 'api_client.dart';
 
 class SplitPage extends StatefulWidget {
   const SplitPage({super.key, required this.userId});
@@ -10,30 +11,14 @@ class SplitPage extends StatefulWidget {
   State<SplitPage> createState() => _SplitPageState();
 }
 
-class _SplitPageState extends State<SplitPage>
-    with SingleTickerProviderStateMixin {
+class _SplitPageState extends State<SplitPage> {
   String? _selectedSessionId;
-  TabController? _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
 
   void _onSessionSelected(String sessionId) {
     setState(() {
       _selectedSessionId = sessionId;
     });
-    if (_tabController != null) {
-      _tabController!.animateTo(1);
-    }
+    Navigator.of(context).pop(); // Drawerを閉じる
   }
 
   @override
@@ -44,7 +29,28 @@ class _SplitPageState extends State<SplitPage>
     );
 
     final chatPage = _selectedSessionId == null
-        ? const Center(child: Text('Select a session'))
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  '新しいセッションを開始しましょう',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final ApiClient apiClient = ApiClient();
+                    final newSession = await apiClient.createSession(widget.userId);
+                    setState(() {
+                      _selectedSessionId = newSession.id;
+                    });
+                  },
+                  child: const Text('新しいセッションを開始'),
+                ),
+              ],
+            ),
+          )
         : ChatPage(
             userId: widget.userId,
             sessionId: _selectedSessionId!,
@@ -70,22 +76,30 @@ class _SplitPageState extends State<SplitPage>
       } else {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Tab View'),
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.list), text: 'Sessions'),
-                Tab(icon: Icon(Icons.chat), text: 'Chat'),
+            title: const Text('Chat'),
+          ),
+          drawer: Drawer(
+            child: Column(
+              children: [
+                const DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                  ),
+                  child: Text(
+                    'Sessions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: sessionList,
+                ),
               ],
             ),
           ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              sessionList,
-              chatPage,
-            ],
-          ),
+          body: chatPage,
         );
       }
     });
