@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'api_client.dart';
+import 'chat_input_widget.dart';
 
 class CustomBackendProvider extends LlmProvider with ChangeNotifier {
   CustomBackendProvider({required this.userId, required this.sessionId});
@@ -137,6 +138,16 @@ class _ChatPageState extends State<ChatPage> {
     _loadHistoryFuture = _provider.loadHistory();
   }
 
+  void _handleSendMessage(String text) {
+    print('送信: $text');
+    // TODO: ここでメッセージを実際に送信する処理を実装
+  }
+
+  void _handleAttachmentPressed() {
+    print('添付ボタンが押されました');
+    // TODO: ここで添付機能を実装
+  }
+
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -239,7 +250,10 @@ class _ChatPageState extends State<ChatPage> {
                   left: 0,
                   right: 0,
                   bottom: keyboardHeight, // キーボードの上に配置
-                  child: _buildChatInput(),
+                  child: ChatInputWidget(
+                    onSendMessage: _handleSendMessage,
+                    onAttachmentPressed: _handleAttachmentPressed,
+                  ),
                 ),
               ],
             );
@@ -263,85 +277,5 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // チャット入力ウィジェット
-  Widget _buildChatInput() {
-    final TextEditingController controller = TextEditingController();
-    
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        8.0, 
-        8.0, 
-        8.0, 
-        8.0 + MediaQuery.of(context).viewPadding.bottom
-      ), // セーフエリアを考慮したパディング
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey[300]!, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            // 添付ボタン
-            IconButton(
-              onPressed: () {
-                // 添付機能の実装
-                print('添付ボタンが押されました');
-              },
-              icon: const Icon(Icons.add, color: Colors.grey),
-            ),
-            // テキスト入力フィールド
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: TextField(
-                  controller: controller,
-                  maxLines: null,
-                  decoration: const InputDecoration(
-                    hintText: 'メッセージを入力...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // 送信ボタン
-            Container(
-              decoration: const BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                onPressed: () {
-                  // 送信機能の実装
-                  final text = controller.text.trim();
-                  if (text.isNotEmpty) {
-                    print('送信: $text');
-                    controller.clear();
-                  }
-                },
-                icon: const Icon(Icons.send, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 } 
