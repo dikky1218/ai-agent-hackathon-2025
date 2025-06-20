@@ -25,12 +25,27 @@ class _ChatPageState extends State<ChatPage> {
   bool _speechEnabled = false;
   bool _isListening = false;
   String _lastWords = '';
+  final _scrollableController = DraggableScrollableController();
+  double _sheetSize = 0.4; // initialChildSize
 
   @override
   void initState() {
     super.initState();
     _loadMessageHistory();
     _initSpeech();
+    _scrollableController.addListener(() {
+      if (mounted && _scrollableController.isAttached) {
+        setState(() {
+          _sheetSize = _scrollableController.size;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollableController.dispose();
+    super.dispose();
   }
 
   @override
@@ -207,156 +222,173 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    
+    const chatInputAreaHeight = 60.0;
+    final bottomAreaHeight = keyboardHeight + chatInputAreaHeight;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // 背景のPageView
-          PageView.builder(
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return Container(
-                color: _getPageColor(index),
-                child: Center(
-                  child: Text(
-                    'Page ${index + 1}',
-                    style: const TextStyle(fontSize: 24, color: Colors.white),
-                  ),
-                ),
-              );
-            },
-          ),
-          // DraggableScrollableSheet
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 80 + keyboardHeight,
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.4,
-              minChildSize: 0.1,
-              maxChildSize: 1.0,
-              snap: true,
-              snapSizes: const [0.1, 0.4, 1.0],
-              builder: (context, scrollController) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(16.0),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8.0,
-                        offset: Offset(0, -2),
+      body: LayoutBuilder(builder: (context, constraints) {
+        final sheetContainerHeight = constraints.maxHeight - bottomAreaHeight;
+        // PageViewの高さがマイナスにならないように調整
+        final pageViewHeight = (sheetContainerHeight * (1 - _sheetSize)).clamp(0.0, double.infinity);
+
+        return Stack(
+          children: [
+            // 背景
+            Container(color: Colors.grey[200]),
+            // DraggableScrollableSheetの上部に表示されるPageView
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: pageViewHeight,
+              child: PageView.builder(
+                itemCount: 3,
+                itemBuilder: (context, index) {
+                  return Container(
+                    color: _getPageColor(index),
+                    child: Center(
+                      child: Text(
+                        'Page ${index + 1}',
+                        style: const TextStyle(fontSize: 24, color: Colors.white),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // ドラッグハンドル
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // DraggableScrollableSheet
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: bottomAreaHeight,
+              child: DraggableScrollableSheet(
+                controller: _scrollableController,
+                initialChildSize: 0.4,
+                minChildSize: 0.1,
+                maxChildSize: 1.0,
+                snap: true,
+                snapSizes: const [0.1, 0.4, 1.0],
+                builder: (context, scrollController) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16.0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8.0,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // ドラッグハンドル
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      // チャットビュー
-                      Expanded(
-                        child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : _errorMessage != null
-                                ? Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline,
-                                          size: 48,
-                                          color: Colors.red[300],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          _errorMessage!,
-                                          style: TextStyle(
-                                            color: Colors.red[600],
-                                            fontSize: 16,
+                        // チャットビュー
+                        Expanded(
+                          child: _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : _errorMessage != null
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            size: 48,
+                                            color: Colors.red[300],
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        ElevatedButton(
-                                          onPressed: _loadMessageHistory,
-                                          child: const Text('再試行'),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : _messages.isEmpty
-                                    ? const Center(
-                                        child: Text(
-                                          'メッセージがありません\n下のテキストボックスからメッセージを送信してください',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey,
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            _errorMessage!,
+                                            style: TextStyle(
+                                              color: Colors.red[600],
+                                              fontSize: 16,
+                                            ),
+                                            textAlign: TextAlign.center,
                                           ),
-                                        ),
-                                      )
-                                    : ListView.builder(
-                                        controller: scrollController,
-                                        itemCount: _messages.length,
-                                        itemBuilder: (context, index) {
-                                          return MessageItemWidget(
-                                            message: _messages[index],
-                                            index: index,
-                                          );
-                                        },
+                                          const SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: _loadMessageHistory,
+                                            child: const Text('再試行'),
+                                          ),
+                                        ],
                                       ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                                    )
+                                  : _messages.isEmpty
+                                      ? const Center(
+                                          child: Text(
+                                            'メッセージがありません\n下のテキストボックスからメッセージを送信してください',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          controller: scrollController,
+                                          itemCount: _messages.length,
+                                          itemBuilder: (context, index) {
+                                            return MessageItemWidget(
+                                              message: _messages[index],
+                                              index: index,
+                                            );
+                                          },
+                                        ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          // チャット入力部分
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: keyboardHeight,
-            child: ChatInputWidget(
-              onSendMessage: (text) {
-                _handleSendMessage(text);
-                setState(() {
-                  _lastWords = '';
-                });
-              },
-              onAttachmentPressed: _showAttachmentPicker,
-              selectedImage: _selectedImage,
-              onClearAttachment: () {
-                setState(() {
-                  _selectedImage = null;
-                });
-              },
-              onStartRecording: _startListening,
-              onStopRecording: _stopListening,
-              isRecording: _isListening,
-              text: _lastWords,
+            // チャット入力部分
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: keyboardHeight,
+              child: ChatInputWidget(
+                onSendMessage: (text) {
+                  _handleSendMessage(text);
+                  setState(() {
+                    _lastWords = '';
+                  });
+                },
+                onAttachmentPressed: _showAttachmentPicker,
+                selectedImage: _selectedImage,
+                onClearAttachment: () {
+                  setState(() {
+                    _selectedImage = null;
+                  });
+                },
+                onStartRecording: _startListening,
+                onStopRecording: _stopListening,
+                isRecording: _isListening,
+                text: _lastWords,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 
