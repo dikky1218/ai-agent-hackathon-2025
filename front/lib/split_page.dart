@@ -10,30 +10,14 @@ class SplitPage extends StatefulWidget {
   State<SplitPage> createState() => _SplitPageState();
 }
 
-class _SplitPageState extends State<SplitPage>
-    with SingleTickerProviderStateMixin {
+class _SplitPageState extends State<SplitPage> {
   String? _selectedSessionId;
-  TabController? _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
 
   void _onSessionSelected(String sessionId) {
     setState(() {
       _selectedSessionId = sessionId;
     });
-    if (_tabController != null) {
-      _tabController!.animateTo(1);
-    }
+    Navigator.of(context).pop(); // Drawerを閉じる
   }
 
   @override
@@ -70,22 +54,30 @@ class _SplitPageState extends State<SplitPage>
       } else {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Tab View'),
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.list), text: 'Sessions'),
-                Tab(icon: Icon(Icons.chat), text: 'Chat'),
+            title: const Text('Chat'),
+          ),
+          drawer: Drawer(
+            child: Column(
+              children: [
+                const DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                  ),
+                  child: Text(
+                    'Sessions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: sessionList,
+                ),
               ],
             ),
           ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              sessionList,
-              chatPage,
-            ],
-          ),
+          body: chatPage,
         );
       }
     });

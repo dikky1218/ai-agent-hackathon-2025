@@ -134,7 +134,6 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Chat')),
         body: FutureBuilder<void>(
           future: _loadHistoryFuture,
           builder: (context, snapshot) {
