@@ -11,6 +11,10 @@ class ChatInputWidget extends StatefulWidget {
     this.hintText = 'メッセージを入力...',
     this.selectedImage,
     this.onClearAttachment,
+    this.onStartRecording,
+    this.onStopRecording,
+    this.isRecording = false,
+    this.text,
   });
 
   final Function(String) onSendMessage;
@@ -18,6 +22,10 @@ class ChatInputWidget extends StatefulWidget {
   final String hintText;
   final XFile? selectedImage;
   final VoidCallback? onClearAttachment;
+  final VoidCallback? onStartRecording;
+  final VoidCallback? onStopRecording;
+  final bool isRecording;
+  final String? text;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -25,11 +33,31 @@ class ChatInputWidget extends StatefulWidget {
 
 class _ChatInputWidgetState extends State<ChatInputWidget> {
   late TextEditingController _controller;
+  bool _isComposing = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.text);
+    _controller.addListener(() {
+      if (mounted) {
+        setState(() {
+          _isComposing = _controller.text.isNotEmpty;
+        });
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatInputWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.text != oldWidget.text && widget.text != null) {
+      final oldSelection = _controller.selection;
+      _controller.text = widget.text!;
+      // カーソルを末尾に移動
+      _controller.selection =
+          TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+    }
   }
 
   @override
@@ -110,17 +138,32 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // 送信ボタン
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
+
+                // マイク or 送信ボタン
+                if (_isComposing || widget.selectedImage != null)
+                  // 送信ボタン
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      onPressed: _sendMessage,
+                      icon: const Icon(Icons.send, color: Colors.white),
+                    ),
+                  )
+                else
+                  // マイクボタン
+                  IconButton(
+                    onPressed: widget.isRecording
+                        ? widget.onStopRecording
+                        : widget.onStartRecording,
+                    icon: Icon(
+                      widget.isRecording ? Icons.stop : Icons.mic,
+                      color: widget.isRecording ? Colors.red : Colors.grey,
+                    ),
                   ),
-                  child: IconButton(
-                    onPressed: _sendMessage,
-                    icon: const Icon(Icons.send, color: Colors.white),
-                  ),
-                ),
               ],
             ),
           ],

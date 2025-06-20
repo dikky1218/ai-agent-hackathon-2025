@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'api_client.dart';
 import 'chat_input_widget.dart';
 import 'message_item_widget.dart';
@@ -20,11 +21,16 @@ class _ChatPageState extends State<ChatPage> {
   bool _isLoading = false;
   String? _errorMessage;
   XFile? _selectedImage;
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  bool _isListening = false;
+  String _lastWords = '';
 
   @override
   void initState() {
     super.initState();
     _loadMessageHistory();
+    _initSpeech();
   }
 
   @override
@@ -166,6 +172,38 @@ class _ChatPageState extends State<ChatPage> {
         });
   }
 
+  /// This has to happen only once per app
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {});
+  }
+
+  /// Each time to start a speech recognition session
+  void _startListening() async {
+    await _speechToText.listen(onResult: _onSpeechResult);
+    setState(() {
+      _isListening = true;
+    });
+  }
+
+  /// Manually stop the active speech recognition session
+  /// Note that there are also timeouts that platform implementations use.
+  /// This is a good way to handle user manually stopping the speech recognition.
+  void _stopListening() async {
+    await _speechToText.stop();
+    setState(() {
+      _isListening = false;
+    });
+  }
+
+  /// This is the callback that the SpeechToText plugin calls when
+  /// the platform returns recognized words.
+  void _onSpeechResult(result) {
+    setState(() {
+      _lastWords = result.recognizedWords;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -298,7 +336,12 @@ class _ChatPageState extends State<ChatPage> {
             right: 0,
             bottom: keyboardHeight,
             child: ChatInputWidget(
-              onSendMessage: _handleSendMessage,
+              onSendMessage: (text) {
+                _handleSendMessage(text);
+                setState(() {
+                  _lastWords = '';
+                });
+              },
               onAttachmentPressed: _showAttachmentPicker,
               selectedImage: _selectedImage,
               onClearAttachment: () {
@@ -306,6 +349,10 @@ class _ChatPageState extends State<ChatPage> {
                   _selectedImage = null;
                 });
               },
+              onStartRecording: _startListening,
+              onStopRecording: _stopListening,
+              isRecording: _isListening,
+              text: _lastWords,
             ),
           ),
         ],
