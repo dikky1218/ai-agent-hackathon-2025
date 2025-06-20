@@ -112,7 +112,7 @@ class _ChatPageState extends State<ChatPage> {
                     bottom: bottomAreaHeight,
                     child: ChatSheet(
                       controller: _scrollableController,
-                      messages: chatProvider.userMessages,
+                      messages: chatProvider.userMessages.reversed.toList(),
                       isLoading: chatProvider.isLoading,
                       errorMessage: chatProvider.errorMessage,
                       onRetry: () => chatProvider.loadMessageHistory(widget.userId, widget.sessionId),
