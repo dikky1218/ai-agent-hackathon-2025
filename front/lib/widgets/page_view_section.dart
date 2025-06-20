@@ -95,7 +95,7 @@ class _PageViewSectionState extends State<PageViewSection> {
             PageSlider(
               currentPageIndex: _currentPageIndex,
               totalPages: aiMessages.length,
-              currentPageColor: _getPageColor(_currentPageIndex),
+              currentPageColor: Colors.white,
               onSliderChanged: _onSliderChanged,
             ),
             
@@ -116,7 +116,7 @@ class _PageViewSectionState extends State<PageViewSection> {
                         final message = aiMessages[index];
                         return Container(
                           padding: const EdgeInsets.all(16),
-                          color: _getPageColor(index),
+                          color: Colors.white,
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +126,7 @@ class _PageViewSectionState extends State<PageViewSection> {
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Colors.black,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -135,26 +135,26 @@ class _PageViewSectionState extends State<PageViewSection> {
                                   styleSheet: MarkdownStyleSheet(
                                     p: const TextStyle(
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                     h1: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                     h2: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                     h3: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                     code: TextStyle(
                                       backgroundColor: Colors.black.withValues(alpha: 0.2),
-                                      color: Colors.white,
+                                      color: Colors.black,
                                       fontFamily: 'monospace',
                                     ),
                                     codeblockDecoration: BoxDecoration(
@@ -162,11 +162,11 @@ class _PageViewSectionState extends State<PageViewSection> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     blockquote: const TextStyle(
-                                      color: Colors.white70,
+                                      color: Colors.black,
                                       fontStyle: FontStyle.italic,
                                     ),
                                     listBullet: const TextStyle(
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ),
@@ -183,17 +183,4 @@ class _PageViewSectionState extends State<PageViewSection> {
     );
   }
 
-  Color _getPageColor(int index) {
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.indigo,
-      Colors.red,
-      Colors.brown,
-    ];
-    return colors[index % colors.length];
-  }
 }
