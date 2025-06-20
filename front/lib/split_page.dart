@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'chat_page.dart';
 import 'session_list_widget.dart';
+import 'api_client.dart';
 
 class SplitPage extends StatefulWidget {
   const SplitPage({super.key, required this.userId});
@@ -28,7 +29,28 @@ class _SplitPageState extends State<SplitPage> {
     );
 
     final chatPage = _selectedSessionId == null
-        ? const Center(child: Text('Select a session'))
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  '新しいセッションを開始しましょう',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final ApiClient apiClient = ApiClient();
+                    final newSession = await apiClient.createSession(widget.userId);
+                    setState(() {
+                      _selectedSessionId = newSession.id;
+                    });
+                  },
+                  child: const Text('新しいセッションを開始'),
+                ),
+              ],
+            ),
+          )
         : ChatPage(
             userId: widget.userId,
             sessionId: _selectedSessionId!,
