@@ -19,6 +19,7 @@ class _ChatPageState extends State<ChatPage> {
   List<ChatMessage> _messages = [];
   bool _isLoading = false;
   String? _errorMessage;
+  XFile? _selectedImage;
 
   @override
   void initState() {
@@ -74,19 +75,34 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _handleSendMessage(String text) async {
-    print('送信: $text');
-    
+    final List<Attachment> attachments;
+    if (_selectedImage != null) {
+      final imageBytes = await _selectedImage!.readAsBytes();
+      attachments = [
+        FileAttachment(
+          name: _selectedImage!.name,
+          bytes: imageBytes,
+          mimeType: 'image/jpeg', // 必要に応じてMIMEタイプを調整
+        )
+      ];
+    } else {
+      attachments = [];
+    }
+
     // ユーザーメッセージを即座に追加
     setState(() {
-      _messages.add(ChatMessage.user(text, []));
+      _messages.add(ChatMessage.user(text, attachments));
+      _selectedImage = null; // 送信後に選択をクリア
     });
 
     try {
+      // プレースホルダーテキストはAPIに送信しない
+      final promptText = text == '[画像]' ? '' : text;
       final replies = await _apiClient.postMessage(
         userId: widget.userId,
         sessionId: widget.sessionId,
-        prompt: text,
-        attachments: [],
+        prompt: promptText,
+        attachments: attachments,
       );
       
       // AI応答を追加
@@ -111,8 +127,9 @@ class _ChatPageState extends State<ChatPage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
-      print('選択された画像のパス: ${image.path}');
-      // TODO: 選択した画像をメッセージに追加する処理
+      setState(() {
+        _selectedImage = image;
+      });
     }
   }
 
@@ -250,6 +267,12 @@ class _ChatPageState extends State<ChatPage> {
             child: ChatInputWidget(
               onSendMessage: _handleSendMessage,
               onAttachmentPressed: _handleAttachmentPressed,
+              selectedImage: _selectedImage,
+              onClearAttachment: () {
+                setState(() {
+                  _selectedImage = null;
+                });
+              },
             ),
           ),
         ],
