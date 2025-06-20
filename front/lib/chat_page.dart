@@ -115,6 +115,11 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant ChatPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.sessionId != oldWidget.sessionId) {
@@ -184,26 +189,16 @@ class _ChatPageState extends State<ChatPage> {
                         child: Column(
                           children: [
                             // ドラッグハンドル
-                            GestureDetector(
-                              onVerticalDragUpdate: (details) {
-                                // ドラッグハンドルでのスクロール操作を有効化
-                                scrollController.animateTo(
-                                  scrollController.offset - details.delta.dy,
-                                  duration: const Duration(milliseconds: 1),
-                                  curve: Curves.linear,
-                                );
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                child: Center(
-                                  child: Container(
-                                    width: 40,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[400],
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
                               ),
