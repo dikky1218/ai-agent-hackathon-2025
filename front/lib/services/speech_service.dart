@@ -17,7 +17,12 @@ class SpeechService extends ChangeNotifier {
   }
 
   Future<void> startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
+    await _speechToText.listen(
+      onResult: _onSpeechResult,
+      localeId: 'ja_JP',
+      listenFor: Duration(seconds: 300),
+      pauseFor: Duration(seconds: 3),
+    );
     _isListening = true;
     notifyListeners();
   }
