@@ -122,15 +122,48 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _handleAttachmentPressed() async {
+  void _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // 画像の品質を50に設定してファイルサイズを削減
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 50,
+    );
 
     if (image != null) {
       setState(() {
         _selectedImage = image;
       });
     }
+  }
+
+  void _showAttachmentPicker() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return SafeArea(
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('ギャラリーから選択'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('カメラで撮影'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+              ],
+            ),
+          );
+        });
   }
 
   @override
@@ -266,7 +299,7 @@ class _ChatPageState extends State<ChatPage> {
             bottom: keyboardHeight,
             child: ChatInputWidget(
               onSendMessage: _handleSendMessage,
-              onAttachmentPressed: _handleAttachmentPressed,
+              onAttachmentPressed: _showAttachmentPicker,
               selectedImage: _selectedImage,
               onClearAttachment: () {
                 setState(() {
