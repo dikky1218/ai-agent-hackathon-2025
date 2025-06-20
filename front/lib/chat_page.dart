@@ -143,8 +143,49 @@ class _ChatPageState extends State<ChatPage> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else {
-              return LlmChatView(
-                provider: _provider,
+              return DraggableScrollableSheet(
+                initialChildSize: 0.9,
+                minChildSize: 0.3,
+                maxChildSize: 1.0,
+                snap: true,
+                snapSizes: const [0.3, 0.6, 0.9],
+                builder: (context, scrollController) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16.0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8.0,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // ドラッグハンドル
+                        Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        // チャットビュー
+                        Expanded(
+                          child: LlmChatView(
+                            provider: _provider,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             }
           },
