@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
+import 'package:image_picker/image_picker.dart';
 import 'api_client.dart';
 import 'chat_input_widget.dart';
 import 'message_item_widget.dart';
@@ -105,12 +106,15 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _handleAttachmentPressed() {
-    print('添付ボタンが押されました');
-    // TODO: ここで添付機能を実装
+  void _handleAttachmentPressed() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      print('選択された画像のパス: ${image.path}');
+      // TODO: 選択した画像をメッセージに追加する処理
+    }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
