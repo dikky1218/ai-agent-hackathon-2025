@@ -1,0 +1,7 @@
+# すべてのファイルとディレクトリを除外
+*
+
+# 必要なファイルとディレクトリのみを含める
+!main.py
+!learning_agent/
+!requirements.txt 
