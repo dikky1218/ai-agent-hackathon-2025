@@ -174,6 +174,7 @@ class _PageViewSectionState extends State<PageViewSection> {
                                       color: Colors.black,
                                       decoration: TextDecoration.underline,
                                       decorationColor: SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex) ?? Colors.black,
+                                      decorationThickness: 3.0,
                                     ),
                                     h3: const TextStyle(
                                       fontSize: 18,
