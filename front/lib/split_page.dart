@@ -84,7 +84,14 @@ class _SplitPageState extends State<SplitPage> {
       } else {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Chat'),
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            title: const Text(
+              'プレゼン駆動-勉強アプリ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           drawer: Drawer(
             child: Column(
@@ -93,14 +100,14 @@ class _SplitPageState extends State<SplitPage> {
                   height: 80,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                   ),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '今までの学び',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
