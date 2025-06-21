@@ -152,12 +152,15 @@ class _PageViewSectionState extends State<PageViewSection> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'AI回答 ${slidePage.originalMessageIndex + 1}-${slidePage.slideIndex + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'ページ: ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),

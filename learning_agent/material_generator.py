@@ -65,6 +65,7 @@ material_gen_and_teacher_agent = Agent(
 ---
 学習教材のマークダウン(h1見出しの間に`---`を挿入してください)
 ---
+わからないことがあれば、なんでも質問してください。
 
 """,
     tools=[AgentTool(material_generator_agent)],

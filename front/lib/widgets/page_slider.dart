@@ -23,14 +23,6 @@ class PageSlider extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // 表示用のタイトルを決定
-    String title;
-    if (currentSlidePage != null) {
-      title = 'AI回答 ${currentSlidePage!.originalMessageIndex + 1}-${currentSlidePage!.slideIndex + 1}';
-    } else {
-      title = 'AI回答 ${currentPageIndex + 1}';
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -43,13 +35,6 @@ class PageSlider extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               const Spacer(),
               Text(
                 '${currentPageIndex + 1} / $totalPages',
