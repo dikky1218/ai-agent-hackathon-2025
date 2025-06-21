@@ -100,8 +100,12 @@ class _PageViewSectionState extends State<PageViewSection> {
                 targetIndex = 0;
                 _isInitialLoad = false;
               } else {
-                // 2回目以降は最新のメッセージの最初のスライドに自動遷移
-                targetIndex = slidePages.length - 1;
+                // 2回目以降は現在のページの次のページに遷移
+                targetIndex = _currentPageIndex + 1;
+                // 範囲チェック：次のページが存在しない場合は最後のページに遷移
+                if (targetIndex >= slidePages.length) {
+                  targetIndex = slidePages.length - 1;
+                }
               }
               
               setState(() {
