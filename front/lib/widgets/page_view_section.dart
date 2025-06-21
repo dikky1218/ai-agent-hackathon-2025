@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
 import '../models/slide_page.dart';
+import '../services/slide_generator.dart';
 import 'page_slider.dart';
 
 class PageViewSection extends StatefulWidget {
@@ -35,32 +36,6 @@ class _PageViewSectionState extends State<PageViewSection> {
     super.dispose();
   }
 
-  // aiMessagesからslidePagesを生成するメソッド
-  List<SlidePage> _generateSlidePages(List messages) {
-    List<SlidePage> slidePages = [];
-    
-    for (int messageIndex = 0; messageIndex < messages.length; messageIndex++) {
-      final message = messages[messageIndex];
-      final text = message.text ?? '';
-      
-      // \n---\nで分割
-      final parts = text.split('\n---\n');
-      
-      for (int partIndex = 0; partIndex < parts.length; partIndex++) {
-        final part = parts[partIndex].trim();
-        if (part.isNotEmpty) {
-          slidePages.add(SlidePage(
-            text: part,
-            originalMessageIndex: messageIndex,
-            slideIndex: partIndex,
-          ));
-        }
-      }
-    }
-    
-    return slidePages;
-  }
-
   // Sliderの値が変更されたときの処理
   void _onSliderChanged(double value) {
     final newIndex = value.round();
@@ -88,7 +63,7 @@ class _PageViewSectionState extends State<PageViewSection> {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         final aiMessages = chatProvider.aiMessages;
-        final slidePages = _generateSlidePages(aiMessages);
+        final slidePages = SlideGenerator.generateSlidePages(aiMessages);
         
         // AIメッセージが増えた場合の処理
         if (aiMessages.length > _previousAiMessageCount && slidePages.isNotEmpty) {
