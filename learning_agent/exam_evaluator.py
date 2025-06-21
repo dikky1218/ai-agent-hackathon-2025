@@ -9,8 +9,7 @@ _PROMPT = """
 - ユーザーのプレゼンテーションの内容を評価します。
 - 具体的なフィードバックと採点を行います。
 - 改善点や良かった点を伝えます。
-- 伝え終わったら、学習サポート coordinator agentに委譲します。
-
+- 伝え終わったら、topic_hearing_agentに委譲します。
 """
 
 exam_evaluator_agent = Agent(
