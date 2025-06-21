@@ -142,7 +142,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 const SizedBox(width: 8),
 
                 // マイク or 送信ボタン
-                if (_isComposing || widget.selectedImage != null || widget.isSending)
+                if ((_isComposing || widget.selectedImage != null || widget.isSending) && !widget.isRecording)
                   // 送信ボタン
                   Container(
                     margin: const EdgeInsets.only(left: 8),
