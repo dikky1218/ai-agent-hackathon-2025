@@ -74,6 +74,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           text.isEmpty && widget.selectedImage != null ? '[画像]' : text;
       widget.onSendMessage(messageToSend);
       _controller.clear();
+      setState(() {
+        _isComposing = false;
+      });
     }
   }
 
