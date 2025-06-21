@@ -12,7 +12,10 @@ class SpeechService extends ChangeNotifier {
   String get lastWords => _lastWords;
 
   Future<void> initialize() async {
-    _speechEnabled = await _speechToText.initialize();
+    _speechEnabled = await _speechToText.initialize(
+      onStatus: _onStatusChanged,
+      onError: _onError,
+    );
     notifyListeners();
   }
 
@@ -21,7 +24,7 @@ class SpeechService extends ChangeNotifier {
       onResult: _onSpeechResult,
       localeId: 'ja_JP',
       listenFor: Duration(seconds: 300),
-      pauseFor: Duration(seconds: 3),
+      pauseFor: Duration(seconds: 60),
     );
     _isListening = true;
     notifyListeners();
@@ -40,6 +43,25 @@ class SpeechService extends ChangeNotifier {
 
   void _onSpeechResult(result) {
     _lastWords = result.recognizedWords;
+    notifyListeners();
+  }
+
+  // 音声認識の状態変化を監視
+  void _onStatusChanged(String status) {
+    print('Speech status: $status'); // デバッグ用
+    if (status == 'notListening' || status == 'done') {
+      _isListening = false;
+      notifyListeners();
+    } else if (status == 'listening') {
+      _isListening = true;
+      notifyListeners();
+    }
+  }
+
+  // エラーハンドリング
+  void _onError(errorNotification) {
+    print('Speech error: $errorNotification'); // デバッグ用
+    _isListening = false;
     notifyListeners();
   }
 
