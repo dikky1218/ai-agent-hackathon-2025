@@ -124,9 +124,20 @@ class _PageViewSectionState extends State<PageViewSection> {
                       itemCount: slidePages.length,
                       itemBuilder: (context, index) {
                         final slidePage = slidePages[index];
+                        final borderColor = SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex);
                         return Container(
+                          margin: const EdgeInsets.all(8),
                           padding: const EdgeInsets.all(16),
-                          color: Colors.white,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: borderColor != null 
+                              ? Border.all(
+                                  color: borderColor,
+                                  width: 3.0,
+                                )
+                              : null,
+                          ),
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,10 +161,10 @@ class _PageViewSectionState extends State<PageViewSection> {
                                       fontSize: 16,
                                       color: Colors.black,
                                     ),
-                                    h1: const TextStyle(
+                                    h1: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex) ?? Colors.black,
                                     ),
                                     h2: const TextStyle(
                                       fontSize: 20,

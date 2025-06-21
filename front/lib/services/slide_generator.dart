@@ -1,9 +1,32 @@
+import 'package:flutter/material.dart';
 import '../models/slide_page.dart';
 
 class SlideGenerator {
+  // 目に優しく区別しやすい色パレット（HSLで定義）
+  static final List<Map<String, double>> _colorPalette = [
+    {'h': 210, 's': 0.7, 'l': 0.6}, // ソフトブルー
+    {'h': 150, 's': 0.6, 'l': 0.6}, // ソフトグリーン
+    {'h': 30, 's': 0.7, 'l': 0.7},  // ソフトオレンジ
+    {'h': 270, 's': 0.6, 'l': 0.7}, // ソフトパープル
+    {'h': 350, 's': 0.6, 'l': 0.7}, // ソフトピンク
+    {'h': 180, 's': 0.6, 'l': 0.6}, // ソフトティール
+    {'h': 60, 's': 0.6, 'l': 0.7},  // ソフトイエロー
+    {'h': 300, 's': 0.5, 'l': 0.7}, // ソフトマゼンタ
+    {'h': 120, 's': 0.5, 'l': 0.7}, // ライトグリーン
+    {'h': 240, 's': 0.6, 'l': 0.7}, // ライトブルー
+  ];
+
+  // h1タイトルと色インデックスのマッピング
+  static final Map<String, int> _titleColorMap = {};
+  static int _nextColorIndex = 0;
+
   // aiMessagesからslidePagesを生成するメソッド
   static List<SlidePage> generateSlidePages(List messages) {
     List<SlidePage> slidePages = [];
+    
+    // 色のマッピングをリセット
+    _titleColorMap.clear();
+    _nextColorIndex = 0;
     
     for (int messageIndex = 0; messageIndex < messages.length; messageIndex++) {
       final message = messages[messageIndex];
@@ -23,6 +46,43 @@ class SlideGenerator {
     }
     
     return slidePages;
+  }
+
+  // h1タイトルに対応する色インデックスを取得またはランダム生成
+  static int _getColorIndexForTitle(String title) {
+    if (_titleColorMap.containsKey(title)) {
+      return _titleColorMap[title]!;
+    }
+    
+    // ランダムな色を割り当て（重複を避けるために連続的に割り当て）
+    final colorIndex = _nextColorIndex % _colorPalette.length;
+    _titleColorMap[title] = colorIndex;
+    _nextColorIndex++;
+    
+    return colorIndex;
+  }
+
+  // 色インデックスから色情報を取得するメソッド
+  static Map<String, double>? getColorByIndex(int? colorIndex) {
+    if (colorIndex == null || colorIndex >= _colorPalette.length) {
+      return null;
+    }
+    return _colorPalette[colorIndex];
+  }
+
+  // 色インデックスからFlutter Colorオブジェクトを取得するメソッド
+  static Color? getFlutterColorByIndex(int? colorIndex) {
+    final colorData = getColorByIndex(colorIndex);
+    if (colorData == null) {
+      return null;
+    }
+    
+    // HSLからRGBに変換
+    final h = colorData['h']! / 360.0;
+    final s = colorData['s']!;
+    final l = colorData['l']!;
+    
+    return HSLColor.fromAHSL(1.0, h * 360, s, l).toColor();
   }
 
   // マークダウン構造を解析してスライドを生成するメソッド
@@ -78,12 +138,14 @@ class SlideGenerator {
                 text: line,
                 originalMessageIndex: messageIndex,
                 slideIndex: 0,
+                colorIndex: null, // h1タイトルがない場合は色なし
               ));
             } else {
               slides.last = SlidePage(
                 text: slides.last.text + '\n' + line,
                 originalMessageIndex: messageIndex,
                 slideIndex: slides.last.slideIndex,
+                colorIndex: slides.last.colorIndex, // 既存の色インデックスを保持
               );
             }
           }
@@ -107,6 +169,7 @@ class SlideGenerator {
         text: text,
         originalMessageIndex: messageIndex,
         slideIndex: partIndex,
+        colorIndex: null, // h1タイトルがない場合は色なし
       ));
     }
     
@@ -116,21 +179,27 @@ class SlideGenerator {
   // h1セクションからスライドを生成するヘルパーメソッド
   static void _addH1SectionSlides(List<SlidePage> slides, String h1Title, String h1Content, 
                           List<String> h2Sections, int messageIndex, int partIndex) {
+    final colorIndex = _getColorIndexForTitle(h1Title);
+    
     if (h2Sections.isEmpty) {
       // h2セクションがない場合はh1セクション全体を1つのスライドとする
+      // h1タイトルの形式を# <タイトル>に変更
+      final modifiedContent = h1Content.replaceFirst('# $h1Title', '# <$h1Title>');
       slides.add(SlidePage(
-        text: h1Content.trim(),
+        text: modifiedContent.trim(),
         originalMessageIndex: messageIndex,
         slideIndex: slides.length,
+        colorIndex: colorIndex,
       ));
     } else {
       // h2セクションがある場合は、h1タイトル + 各h2セクションを別々のスライドとする
       for (int i = 0; i < h2Sections.length; i++) {
-        final slideContent = '# $h1Title\n\n${h2Sections[i]}';
+        final slideContent = '# <$h1Title>\n\n${h2Sections[i]}';
         slides.add(SlidePage(
           text: slideContent.trim(),
           originalMessageIndex: messageIndex,
           slideIndex: slides.length,
+          colorIndex: colorIndex,
         ));
       }
     }
