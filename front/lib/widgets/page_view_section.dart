@@ -102,7 +102,9 @@ class _PageViewSectionState extends State<PageViewSection> {
             PageSlider(
               currentPageIndex: _currentPageIndex,
               totalPages: slidePages.length,
-              currentPageColor: Colors.white,
+              currentPageColor: slidePages.isNotEmpty && _currentPageIndex < slidePages.length
+                  ? SlideGenerator.getFlutterColorByIndex(slidePages[_currentPageIndex].colorIndex) ?? Theme.of(context).primaryColor
+                  : Theme.of(context).primaryColor,
               onSliderChanged: _onSliderChanged,
               currentSlidePage: slidePages.isNotEmpty && _currentPageIndex < slidePages.length 
                   ? slidePages[_currentPageIndex] 
