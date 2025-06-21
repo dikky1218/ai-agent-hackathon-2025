@@ -81,15 +81,21 @@ class _SplitPageState extends State<SplitPage> {
           drawer: Drawer(
             child: Column(
               children: [
-                const DrawerHeader(
+                Container(
+                  height: 80,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                  child: Text(
-                    'Sessions',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'セッション一覧',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
