@@ -48,7 +48,7 @@ class _SessionListWidgetState extends State<SessionListWidget> {
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
             onPressed: _createNewSession,
-            child: const Text('新しいセッションを開始'),
+            child: const Text('新しい勉強をはじめる'),
           ),
         ),
         Expanded(
