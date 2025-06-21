@@ -17,6 +17,28 @@ _PROMPT = """
 - 学習教材はMarkdown形式で出力してください
 - 各キーワードをh1見出しにしてください
   - その下にsentenceに対応する学習テキストをmarkdownで構造化して出力してください
+- また、h1セクションの間には`---`を挿入してください
+
+# 出力例
+```markdown
+---
+# キーワード1
+## サブトピック1
+学習テキスト1
+
+## サブトピック2
+学習テキスト2
+
+## サブトピック3
+学習テキスト3
+---
+# キーワード2
+...
+---
+# キーワード3
+...
+---
+```
 """
 
 material_generator_agent = Agent(
@@ -35,8 +57,15 @@ material_gen_and_teacher_agent = Agent(
     description="学習教材を生成し、その内容に関する相談を受け付けるエージェント",
     instruction="""
 1. material_generator_agentを呼び出して、学習教材を生成してください。
-2. 生成された学習教材を表示します。
+2. 生成された学習教材をそのまま表示します。
 3. その後のユーザーとのやりとりに関しては、teacher_agentを呼び出して行います。
+
+# 2.における出力形式
+学習教材を作成しました。
+---
+学習教材のマークダウン(h1見出しの間に`---`を挿入してください)
+---
+
 """,
     tools=[AgentTool(material_generator_agent)],
     sub_agents=[teacher_agent],

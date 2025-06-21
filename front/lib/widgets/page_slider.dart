@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../models/slide_page.dart';
 
 class PageSlider extends StatelessWidget {
   final int currentPageIndex;
   final int totalPages;
   final Color currentPageColor;
   final ValueChanged<double> onSliderChanged;
+  final SlidePage? currentSlidePage; // 現在のスライドページ情報
 
   const PageSlider({
     super.key,
@@ -12,12 +14,21 @@ class PageSlider extends StatelessWidget {
     required this.totalPages,
     required this.currentPageColor,
     required this.onSliderChanged,
+    this.currentSlidePage,
   });
 
   @override
   Widget build(BuildContext context) {
     if (totalPages <= 1) {
       return const SizedBox.shrink();
+    }
+
+    // 表示用のタイトルを決定
+    String title;
+    if (currentSlidePage != null) {
+      title = 'AI回答 ${currentSlidePage!.originalMessageIndex + 1}-${currentSlidePage!.slideIndex + 1}';
+    } else {
+      title = 'AI回答 ${currentPageIndex + 1}';
     }
 
     return Container(
@@ -33,7 +44,7 @@ class PageSlider extends StatelessWidget {
           Row(
             children: [
               Text(
-                'AI回答 ${currentPageIndex + 1}',
+                title,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

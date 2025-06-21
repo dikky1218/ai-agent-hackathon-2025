@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
+import '../models/slide_page.dart';
 import 'page_slider.dart';
 
 class PageViewSection extends StatefulWidget {
@@ -34,6 +35,32 @@ class _PageViewSectionState extends State<PageViewSection> {
     super.dispose();
   }
 
+  // aiMessagesからslidePagesを生成するメソッド
+  List<SlidePage> _generateSlidePages(List messages) {
+    List<SlidePage> slidePages = [];
+    
+    for (int messageIndex = 0; messageIndex < messages.length; messageIndex++) {
+      final message = messages[messageIndex];
+      final text = message.text ?? '';
+      
+      // \n---\nで分割
+      final parts = text.split('\n---\n');
+      
+      for (int partIndex = 0; partIndex < parts.length; partIndex++) {
+        final part = parts[partIndex].trim();
+        if (part.isNotEmpty) {
+          slidePages.add(SlidePage(
+            text: part,
+            originalMessageIndex: messageIndex,
+            slideIndex: partIndex,
+          ));
+        }
+      }
+    }
+    
+    return slidePages;
+  }
+
   // Sliderの値が変更されたときの処理
   void _onSliderChanged(double value) {
     final newIndex = value.round();
@@ -61,9 +88,10 @@ class _PageViewSectionState extends State<PageViewSection> {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         final aiMessages = chatProvider.aiMessages;
+        final slidePages = _generateSlidePages(aiMessages);
         
         // AIメッセージが増えた場合の処理
-        if (aiMessages.length > _previousAiMessageCount && aiMessages.isNotEmpty) {
+        if (aiMessages.length > _previousAiMessageCount && slidePages.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (_pageController.hasClients) {
               int targetIndex;
@@ -72,8 +100,8 @@ class _PageViewSectionState extends State<PageViewSection> {
                 targetIndex = 0;
                 _isInitialLoad = false;
               } else {
-                // 2回目以降は最新のメッセージに自動遷移
-                targetIndex = aiMessages.length - 1;
+                // 2回目以降は最新のメッセージの最初のスライドに自動遷移
+                targetIndex = slidePages.length - 1;
               }
               
               setState(() {
@@ -94,14 +122,17 @@ class _PageViewSectionState extends State<PageViewSection> {
             // Sliderセクション
             PageSlider(
               currentPageIndex: _currentPageIndex,
-              totalPages: aiMessages.length,
+              totalPages: slidePages.length,
               currentPageColor: Colors.white,
               onSliderChanged: _onSliderChanged,
+              currentSlidePage: slidePages.isNotEmpty && _currentPageIndex < slidePages.length 
+                  ? slidePages[_currentPageIndex] 
+                  : null,
             ),
             
             // PageViewセクション
             Expanded(
-              child: aiMessages.isEmpty
+              child: slidePages.isEmpty
                   ? const Center(
                       child: Text(
                         'AIからの回答がここに表示されます',
@@ -111,9 +142,9 @@ class _PageViewSectionState extends State<PageViewSection> {
                   : PageView.builder(
                       controller: _pageController,
                       onPageChanged: _onPageChanged, // ページ変更時のコールバック
-                      itemCount: aiMessages.length,
+                      itemCount: slidePages.length,
                       itemBuilder: (context, index) {
-                        final message = aiMessages[index];
+                        final slidePage = slidePages[index];
                         return Container(
                           padding: const EdgeInsets.all(16),
                           color: Colors.white,
@@ -122,7 +153,7 @@ class _PageViewSectionState extends State<PageViewSection> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'AI回答 ${index + 1}',
+                                  'AI回答 ${slidePage.originalMessageIndex + 1}-${slidePage.slideIndex + 1}',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -131,7 +162,7 @@ class _PageViewSectionState extends State<PageViewSection> {
                                 ),
                                 const SizedBox(height: 16),
                                 MarkdownBody(
-                                  data: message.text ?? '',
+                                  data: slidePage.text,
                                   styleSheet: MarkdownStyleSheet(
                                     p: const TextStyle(
                                       fontSize: 16,
