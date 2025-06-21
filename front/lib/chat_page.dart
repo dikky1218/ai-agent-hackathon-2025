@@ -132,6 +132,7 @@ class _ChatPageState extends State<ChatPage> {
                       onStopRecording: speechService.stopListening,
                       isRecording: speechService.isListening,
                       text: speechService.lastWords,
+                      isSending: chatProvider.isSending,
                     ),
                   ),
                 ],
