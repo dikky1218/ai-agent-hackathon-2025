@@ -47,9 +47,9 @@ class PageSlider extends StatelessWidget {
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: currentPageColor,
-              thumbColor: currentPageColor,
-              overlayColor: currentPageColor.withValues(alpha: 0.2),
+              activeTrackColor: Theme.of(context).primaryColor,
+              thumbColor: Theme.of(context).primaryColor,
+              overlayColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
               inactiveTrackColor: Colors.grey[300],
               trackHeight: 4,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
