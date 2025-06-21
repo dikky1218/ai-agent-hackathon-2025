@@ -1,38 +1,88 @@
 from google.adk.agents import Agent
+from google.adk.tools.agent_tool import AgentTool
 from .config import get_model
+from .teacher import teacher_agent
 
 
 _PROMPT = """
 あなたは学習教材を生成する専門エージェントです。
 
-# 絶対守るルール
-- すでに教材を作成完了している場合
-  - ユーザーが学習トピックに関する変更や、学習内容の質問、そのほかの話題を行った場合は、他のagentを呼び出します。
-  - [役割]の内容以外を求められた場合は、他のagentを呼び出します。
-
 # 学習トピック
-ユーザーとのやり取りの中で最終的に決定した学習トピックを採用してください。
+{topic_sentences}
 
 # 役割
-- 学習トピックから15分で学習できる学習教材を生成します。
-
-
-# 手順
-1. 1つのトピックに割り当てる学習時間を計算(15分 / トピックの数)
-2. 1つめのトピックについて、割り当て学習時間に合わせて、学習内容を生成する
-3. 2.を繰り返し、全てのトピックについて学習内容を生成する
-4. 生成した学習内容をまとめて、学習教材を生成する
-5. 生成完了後、学習サポート coordinator agentに委譲します。
+- 学習トピックの各キーワードに対して、1分で学習できる学習教材を生成します。
 
 # 出力形式
 - 学習教材はMarkdown形式で出力してください
-- 学習教材には、学習トピック、学習内容、学習時間が含まれている必要があります
+- 各キーワードをh1見出しにしてください
+  - サブトピックはh2見出しで出力します。
+  - サブトピックのh2見出しの下にsentenceに対応する学習テキストを出力します
+    - 学習テキストは、リストや表などで視覚的にわかりやすくしてください
+    - 学習テキストに含める文章は簡潔に2~3文にしてください
+- 最後にh1見出しとして「まとめ」セクションを追加します。
+  - 学習内容を簡潔にまとめます。
+  - ここではh2見出しを使わず、リストでまとめます。
+- また、h1セクションの間には`---`を挿入してください
 
+# 出力例
+```markdown
+---
+# キーワード1
+## サブトピック1
+学習テキスト1
+
+## サブトピック2
+学習テキスト2
+
+---
+# キーワード2
+## サブトピック1
+学習テキスト1
+
+## サブトピック2
+学習テキスト2
+---
+# キーワード3
+## サブトピック1
+学習テキスト1
+
+## サブトピック2
+学習テキスト2
+---
+# まとめ
+キーワード1~3の学習内容の簡潔なまとめ
+---
+```
 """
 
 material_generator_agent = Agent(
-    model=get_model(),
+    model=get_model(is_pro=True),
     name="material_generator_agent",
-    description="ユーザーが決定した学習トピック群から、学習教材を生成する専門エージェント",
+    description="与えられた学習トピックから、学習教材を生成するエージェント",
     instruction=_PROMPT,
+    disallow_transfer_to_parent=True,
+    disallow_transfer_to_peers=True,
+    include_contents='none',
+    output_key="material",
+) 
+
+material_gen_and_teacher_agent = Agent(
+    name="material_gen_and_teacher_agent",
+    description="学習教材を生成し、その内容に関する相談を受け付けるエージェント",
+    instruction="""
+1. material_generator_agentを呼び出して、学習教材を生成してください。
+2. 生成された学習教材をそのまま表示します。
+3. その後のユーザーとのやりとりに関しては、teacher_agentを呼び出して行います。
+
+# 2.における出力形式
+学習教材を作成しました。
+---
+学習教材のマークダウン(h1見出しの間に`---`を挿入してください)
+---
+わからないことがあれば、なんでも質問してください。
+
+""",
+    tools=[AgentTool(material_generator_agent)],
+    sub_agents=[teacher_agent],
 ) 

@@ -15,6 +15,7 @@ class ChatInputWidget extends StatefulWidget {
     this.onStopRecording,
     this.isRecording = false,
     this.text,
+    this.isSending = false,
   });
 
   final Function(String) onSendMessage;
@@ -26,6 +27,7 @@ class ChatInputWidget extends StatefulWidget {
   final VoidCallback? onStopRecording;
   final bool isRecording;
   final String? text;
+  final bool isSending;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -52,7 +54,6 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   void didUpdateWidget(covariant ChatInputWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.text != oldWidget.text && widget.text != null) {
-      final oldSelection = _controller.selection;
       _controller.text = widget.text!;
       // カーソルを末尾に移動
       _controller.selection =
@@ -74,6 +75,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           text.isEmpty && widget.selectedImage != null ? '[画像]' : text;
       widget.onSendMessage(messageToSend);
       _controller.clear();
+      setState(() {
+        _isComposing = false;
+      });
     }
   }
 
@@ -93,7 +97,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
@@ -110,9 +114,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 // 添付ボタン
                 IconButton(
                   onPressed: widget.onAttachmentPressed ??
-                      () {
-                        print('添付ボタンが押されました');
-                      },
+                      () {},
                   icon: const Icon(Icons.add, color: Colors.grey),
                 ),
                 // テキスト入力フィールド
@@ -140,7 +142,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 const SizedBox(width: 8),
 
                 // マイク or 送信ボタン
-                if (_isComposing || widget.selectedImage != null)
+                if ((_isComposing || widget.selectedImage != null || widget.isSending) && !widget.isRecording)
                   // 送信ボタン
                   Container(
                     margin: const EdgeInsets.only(left: 8),
@@ -148,10 +150,20 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       color: Colors.blue,
                       shape: BoxShape.circle,
                     ),
-                    child: IconButton(
-                      onPressed: _sendMessage,
-                      icon: const Icon(Icons.send, color: Colors.white),
-                    ),
+                    child: widget.isSending 
+                        ? Container(
+                            width: 48,
+                            height: 48,
+                            padding: const EdgeInsets.all(12),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : IconButton(
+                            onPressed: widget.isSending ? null : _sendMessage,
+                            icon: const Icon(Icons.send, color: Colors.white),
+                          ),
                   )
                 else
                   // マイクボタン

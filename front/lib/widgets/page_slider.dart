@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../models/slide_page.dart';
 
 class PageSlider extends StatelessWidget {
   final int currentPageIndex;
   final int totalPages;
   final Color currentPageColor;
   final ValueChanged<double> onSliderChanged;
+  final SlidePage? currentSlidePage; // 現在のスライドページ情報
 
   const PageSlider({
     super.key,
@@ -12,6 +14,7 @@ class PageSlider extends StatelessWidget {
     required this.totalPages,
     required this.currentPageColor,
     required this.onSliderChanged,
+    this.currentSlidePage,
   });
 
   @override
@@ -32,13 +35,6 @@ class PageSlider extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                'AI回答 ${currentPageIndex + 1}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               const Spacer(),
               Text(
                 '${currentPageIndex + 1} / $totalPages',

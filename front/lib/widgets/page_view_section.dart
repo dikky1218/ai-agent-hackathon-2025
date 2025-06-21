@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/chat_provider.dart';
+import '../models/slide_page.dart';
+import '../services/slide_generator.dart';
 import 'page_slider.dart';
 
 class PageViewSection extends StatefulWidget {
@@ -61,9 +63,10 @@ class _PageViewSectionState extends State<PageViewSection> {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         final aiMessages = chatProvider.aiMessages;
+        final slidePages = SlideGenerator.generateSlidePages(aiMessages);
         
         // AIメッセージが増えた場合の処理
-        if (aiMessages.length > _previousAiMessageCount && aiMessages.isNotEmpty) {
+        if (aiMessages.length > _previousAiMessageCount && slidePages.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (_pageController.hasClients) {
               int targetIndex;
@@ -72,8 +75,12 @@ class _PageViewSectionState extends State<PageViewSection> {
                 targetIndex = 0;
                 _isInitialLoad = false;
               } else {
-                // 2回目以降は最新のメッセージに自動遷移
-                targetIndex = aiMessages.length - 1;
+                // 2回目以降は現在のページの次のページに遷移
+                targetIndex = _currentPageIndex + 1;
+                // 範囲チェック：次のページが存在しない場合は最後のページに遷移
+                if (targetIndex >= slidePages.length) {
+                  targetIndex = slidePages.length - 1;
+                }
               }
               
               setState(() {
@@ -94,14 +101,19 @@ class _PageViewSectionState extends State<PageViewSection> {
             // Sliderセクション
             PageSlider(
               currentPageIndex: _currentPageIndex,
-              totalPages: aiMessages.length,
-              currentPageColor: Colors.white,
+              totalPages: slidePages.length,
+              currentPageColor: slidePages.isNotEmpty && _currentPageIndex < slidePages.length
+                  ? SlideGenerator.getFlutterColorByIndex(slidePages[_currentPageIndex].colorIndex) ?? Theme.of(context).primaryColor
+                  : Theme.of(context).primaryColor,
               onSliderChanged: _onSliderChanged,
+              currentSlidePage: slidePages.isNotEmpty && _currentPageIndex < slidePages.length 
+                  ? slidePages[_currentPageIndex] 
+                  : null,
             ),
             
             // PageViewセクション
             Expanded(
-              child: aiMessages.isEmpty
+              child: slidePages.isEmpty
                   ? const Center(
                       child: Text(
                         'AIからの回答がここに表示されます',
@@ -111,41 +123,58 @@ class _PageViewSectionState extends State<PageViewSection> {
                   : PageView.builder(
                       controller: _pageController,
                       onPageChanged: _onPageChanged, // ページ変更時のコールバック
-                      itemCount: aiMessages.length,
+                      itemCount: slidePages.length,
                       itemBuilder: (context, index) {
-                        final message = aiMessages[index];
+                        final slidePage = slidePages[index];
+                        final borderColor = SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex);
                         return Container(
+                          margin: const EdgeInsets.all(8),
                           padding: const EdgeInsets.all(16),
-                          color: Colors.white,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: borderColor != null 
+                              ? Border.all(
+                                  color: borderColor,
+                                  width: 3.0,
+                                )
+                              : null,
+                          ),
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'AI回答 ${index + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'ページ: ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 MarkdownBody(
-                                  data: message.text ?? '',
+                                  data: slidePage.text,
                                   styleSheet: MarkdownStyleSheet(
                                     p: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.black,
                                     ),
-                                    h1: const TextStyle(
+                                    h1: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex) ?? Colors.black,
                                     ),
-                                    h2: const TextStyle(
+                                    h2: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: SlideGenerator.getFlutterColorByIndex(slidePage.colorIndex) ?? Colors.black,
+                                      decorationThickness: 3.0,
                                     ),
                                     h3: const TextStyle(
                                       fontSize: 18,

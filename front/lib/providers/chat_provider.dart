@@ -8,12 +8,14 @@ class ChatProvider extends ChangeNotifier {
   List<ChatMessage> _userMessages = [];
   List<ChatMessage> _aiMessages = [];
   bool _isLoading = false;
+  bool _isSending = false;
   String? _errorMessage;
   XFile? _selectedImage;
 
   List<ChatMessage> get userMessages => _userMessages;
   List<ChatMessage> get aiMessages => _aiMessages;
   bool get isLoading => _isLoading;
+  bool get isSending => _isSending;
   String? get errorMessage => _errorMessage;
   XFile? get selectedImage => _selectedImage;
 
@@ -64,6 +66,9 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> sendMessage(String userId, String sessionId, String text) async {
+    _isSending = true;
+    notifyListeners();
+
     final List<Attachment> attachments;
     if (_selectedImage != null) {
       final imageBytes = await _selectedImage!.readAsBytes();
@@ -102,6 +107,9 @@ class ChatProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _aiMessages.add(ChatMessage.llm()..append('エラー: $e'));
+      notifyListeners();
+    } finally {
+      _isSending = false;
       notifyListeners();
     }
   }

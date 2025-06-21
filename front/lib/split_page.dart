@@ -33,12 +33,20 @@ class _SplitPageState extends State<SplitPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  '新しいセッションを開始しましょう',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  '今日は何を学びますか？📓🖊️',
+                  style: TextStyle(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
                   onPressed: () async {
                     final ApiClient apiClient = ApiClient();
                     final newSession = await apiClient.createSession(widget.userId);
@@ -46,7 +54,7 @@ class _SplitPageState extends State<SplitPage> {
                       _selectedSessionId = newSession.id;
                     });
                   },
-                  child: const Text('新しいセッションを開始'),
+                  child: const Text('はじめる'),
                 ),
               ],
             ),
@@ -76,20 +84,33 @@ class _SplitPageState extends State<SplitPage> {
       } else {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Chat'),
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            title: const Text(
+              'プレゼン駆動-勉強アプリ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           drawer: Drawer(
             child: Column(
               children: [
-                const DrawerHeader(
+                Container(
+                  height: 80,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                   ),
-                  child: Text(
-                    'Sessions',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '今までの学び',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

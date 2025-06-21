@@ -16,6 +16,12 @@ class _SessionListWidgetState extends State<SessionListWidget> {
   late Future<List<Session>> _sessionsFuture;
   final ApiClient _apiClient = ApiClient();
 
+  String _formatDateTime(double timestamp) {
+    // Unixタイムスタンプ（秒）をDateTimeに変換
+    final dateTime = DateTime.fromMillisecondsSinceEpoch((timestamp * 1000).toInt());
+    return '${dateTime.month}月${dateTime.day}日${dateTime.hour}時${dateTime.minute}分';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +54,7 @@ class _SessionListWidgetState extends State<SessionListWidget> {
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
             onPressed: _createNewSession,
-            child: const Text('新しいセッションを開始'),
+            child: const Text('新しい勉強をはじめる'),
           ),
         ),
         Expanded(
@@ -68,7 +74,7 @@ class _SessionListWidgetState extends State<SessionListWidget> {
                   itemBuilder: (context, index) {
                     final session = sessions[index];
                     return ListTile(
-                      title: Text(session.id),
+                      title: Text(_formatDateTime(session.lastUpdateTime)),
                       onTap: () => widget.onSessionSelected(session.id),
                     );
                   },
