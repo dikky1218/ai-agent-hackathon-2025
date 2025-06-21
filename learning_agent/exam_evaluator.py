@@ -13,7 +13,7 @@ _PROMPT = """
 """
 
 exam_evaluator_agent = Agent(
-    model=get_model(),
+    model=get_model(is_pro=True),
     name="exam_evaluator_agent",
     description="ユーザーのプレゼンテーションを評価・採点・フィードバックするエージェント",
     instruction=_PROMPT,

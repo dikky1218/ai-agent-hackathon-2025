@@ -57,7 +57,7 @@ _PROMPT = """
 """
 
 material_generator_agent = Agent(
-    model=get_model(),
+    model=get_model(is_pro=True),
     name="material_generator_agent",
     description="与えられた学習トピックから、学習教材を生成するエージェント",
     instruction=_PROMPT,
