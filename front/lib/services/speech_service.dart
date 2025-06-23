@@ -20,13 +20,52 @@ class SpeechService extends ChangeNotifier {
   }
 
   Future<void> startListening() async {
+    // ブラウザで試行する日本語ロケールのリスト（優先順）
+    final possibleJapaneseLocales = [
+      'ja-JP',    // 標準的な形式
+      'ja_JP',    // アンダースコア形式
+      'ja',       // 言語コードのみ
+      'japanese', // 言語名
+      'jp',       // 国コード
+    ];
+
+    String? localeToUse;
+    
+    // 利用可能なロケールから日本語を探す
+    final locales = await _speechToText.locales();
+    print('Available locales count: ${locales.length}');
+    
+    if (locales.isNotEmpty) {
+      // ロケールが利用可能な場合は日本語を探す
+      final japaneseLocales = locales.where((l) => 
+        l.localeId.startsWith('ja') || 
+        l.localeId.contains('japan') || 
+        l.name.toLowerCase().contains('japanese')
+      ).toList();
+      
+      if (japaneseLocales.isNotEmpty) {
+        localeToUse = japaneseLocales.first.localeId;
+        print('Found Japanese locale: $localeToUse');
+      }
+    }
+    
+    // ロケールが見つからない場合は、可能性のある形式を順番に試行
+    if (localeToUse == null) {
+      print('No Japanese locale found in available list, trying possible formats...');
+      // ブラウザの場合、一般的に ja-JP が標準
+      localeToUse = possibleJapaneseLocales.first;
+    }
+    
+    print('Using locale: $localeToUse');
+
     await _speechToText.listen(
       onResult: _onSpeechResult,
-      localeId: 'ja_JP',
+      localeId: localeToUse,
       listenFor: Duration(seconds: 300),
       pauseFor: Duration(seconds: 60),
     );
     _isListening = true;
+    
     notifyListeners();
   }
 
